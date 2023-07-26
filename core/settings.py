@@ -55,38 +55,34 @@ def on_auth_error(request: Request, exc: Exception):
     )
 
 
-def make_middleware() -> List[Middleware]:
-    middleware = [
-        Middleware(
-            CORSMiddleware,
-            allow_origins=["*", "http://localhost", "http://localhost:8080"],
-            allow_credentials=True,
-            allow_methods=["*"],
-            allow_headers=["*"],
-        ),
-        Middleware(
-            AuthenticationMiddleware,
-            backend=AuthBackend(),
-            on_error=on_auth_error,
-        ),
-        # Middleware(SQLAlchemyMiddleware),
-        # Middleware(ResponseLogMiddleware),
-    ]
-    return middleware
+def init_middleware(app_: FastAPI) -> None:
+    app_.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*", "http://localhost", "http://localhost:8080"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+    app_.add_middleware(
+        AuthenticationMiddleware,
+        backend=AuthBackend(),
+        on_error=on_auth_error,
+    )
+    # Middleware(SQLAlchemyMiddleware),
+    # Middleware(ResponseLogMiddleware),
 
 
 # def init_cache() -> None:
 #     Cache.init(backend=RedisBackend(), key_maker=CustomKeyMaker())
 
-# TODO: Refactor sentry
-# sentry_sdk.init(
-#     dsn="https://e64a429e7e574a8e87e06bc4792304f1@o4505579758813184.ingest.sentry.io/4505579762286592",
+sentry_sdk.init(
+    dsn=config.SENTRY_DSN,
 
-#     # Set traces_sample_rate to 1.0 to capture 100%
-#     # of transactions for performance monitoring.
-#     # We recommend adjusting this value in production,
-#     traces_sample_rate=1.0,
-# )
+    # Set traces_sample_rate to 1.0 to capture 100%
+    # of transactions for performance monitoring.
+    # We recommend adjusting this value in production,
+    traces_sample_rate=1.0,
+)
 
 def create_app() -> FastAPI:
     app_ = FastAPI(
@@ -95,13 +91,12 @@ def create_app() -> FastAPI:
         version="2.0.0",
         docs_url=None if config.ENV == "production" else "/docs",
         redoc_url=None if config.ENV == "production" else "/redoc",
-        dependencies=[Depends(Logging)],
-        middleware=make_middleware(),
+        dependencies=[Depends(Logging)]
     )
 
     init_routers(app_=app_)
     init_listeners(app_=app_)
-    app_.add_middleware(make_middleware)
+    init_middleware(app_=app_)
     # init_cache()
     return app_
 

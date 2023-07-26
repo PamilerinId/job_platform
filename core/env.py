@@ -24,7 +24,7 @@ class Config(BaseSettings):
     JWT_PUBLIC_KEY: str | None = os.environ.get("JWT_PUBLIC_KEY")
     REFRESH_TOKEN_EXPIRES_IN: int | None = os.environ.get("REFRESH_TOKEN_EXPIRES_IN", 60)
     ACCESS_TOKEN_EXPIRES_IN: int | None = os.environ.get("ACCESS_TOKEN_EXPIRES_IN", 15)
-    # SENTRY_SDN: str = None
+    SENTRY_DSN: str | None = os.environ.get("SENTRY_DSN")
     # CELERY_BROKER_URL: str = "amqp://user:bitnami@localhost:5672/"
     # CELERY_BACKEND_URL: str = "redis://:password123@localhost:6379/0"
     # REDIS_HOST: str = "localhost"
