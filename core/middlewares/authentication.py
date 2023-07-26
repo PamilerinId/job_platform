@@ -18,7 +18,7 @@ class AuthBackend(AuthenticationBackend):
     async def authenticate(
         self, conn: HTTPConnection
     ) -> Tuple[bool, Optional[BaseUser]]:
-        current_user = BaseUser()
+        current_user: BaseUser()
         authorization: str = conn.headers.get("Authorization")
         if not authorization:
             return False, current_user
@@ -34,15 +34,13 @@ class AuthBackend(AuthenticationBackend):
             return False, current_user
 
         try:
-            payload = TokenHelper.decode(
-                credentials,
-                config.JWT_SECRET_KEY,
+            current_user: BaseUser = TokenHelper.decode(
+                credentials
             )
-            user_id = payload.get("id")
         except jwt.exceptions.PyJWTError:
             return False, current_user
 
-        current_user.id = user_id
+        print(current_user, flush=True)
         return True, current_user
 
 

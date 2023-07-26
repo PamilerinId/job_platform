@@ -1,23 +1,26 @@
 import base64
 from datetime import datetime, timedelta
 from typing import Annotated, Dict, List
+from core.exceptions.base import UnauthorizedException
 
-from jose import jwt, JWTError
+import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from pydantic import BaseModel
 
 from sqlalchemy.orm import Session
+from services.users.schemas import BaseUser
 from services.auth.schemas import RefreshTokenSchema
 
 from services.users.models import User
 
 from core.env import config
 from core.dependencies.sessions import get_db
-from core.exceptions.auth import DecodeTokenException, ExpiredTokenException
+from core.exceptions.auth import DecodeTokenException, ExpiredTokenException, UserNotFoundException
 
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/token")
+
 
 
 class TokenHelper:
@@ -71,21 +74,14 @@ class TokenHelper:
             refresh_token=TokenHelper.encode(payload={"sub": "refresh"}),
         )
 
-    async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], db: Session = Depends(get_db)):
-        credentials_exception = HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-        try:
-            payload = TokenHelper.decode(token)
-            email: str = payload.get("email")
-            if email is None:
-                raise credentials_exception
-        except JWTError:
-            raise credentials_exception
-        user = db.query(User).filter(
-            User.email == email.lower()).first()
-        if user is None:
-            raise credentials_exception
-        return user
+
+async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], 
+                           db: Session = Depends(get_db)) -> BaseUser:
+    payload = TokenHelper.decode(token)
+    user_email: str = payload.get("email")
+    if user_email is None:
+        raise UnauthorizedException(message="Could not validate credentials")
+    user = db.query(User).filter(User.email == user_email).first()
+    if user is None:
+        raise UserNotFoundException
+    return BaseUser.from_orm(user)

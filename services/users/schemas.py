@@ -42,13 +42,13 @@ class UpdateCompanySchema(BaseModel):
 
 ####################### Users #################
 class BaseUser(BaseModel):
+    id: Optional[UUID]
     email: EmailStr = Field(None, description="email")
     first_name: str = Field(None, description="First Name")
     last_name: str = Field(None, description="Last Name")
     role: Optional[UserType]=None
 
     class Config:
-        orm_mode = True
         from_attributes=True
         validate_assignment = True
 

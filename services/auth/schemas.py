@@ -4,7 +4,6 @@ from services.users.schemas import BaseUser
 
 class RegisterUserSchema(BaseUser):
     password: constr(min_length=8)
-    passwordConfirm: str
 
 
 class LoginUserSchema(BaseModel):
