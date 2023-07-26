@@ -59,7 +59,7 @@ def make_middleware() -> List[Middleware]:
     middleware = [
         Middleware(
             CORSMiddleware,
-            allow_origins=["*"],
+            allow_origins=["*", "http://localhost", "http://localhost:8080"],
             allow_credentials=True,
             allow_methods=["*"],
             allow_headers=["*"],
@@ -98,10 +98,10 @@ def create_app() -> FastAPI:
         dependencies=[Depends(Logging)],
         middleware=make_middleware(),
     )
-    # oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
     init_routers(app_=app_)
     init_listeners(app_=app_)
+    app_.add_middleware(make_middleware)
     # init_cache()
     return app_
 
