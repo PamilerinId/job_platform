@@ -89,3 +89,6 @@ async def get_current_user(request: Request, token: Annotated[str, Depends(oauth
     if user is None:
         raise UserNotFoundException
     return BaseUser.from_orm(user)
+
+
+# TODO: implement confirmation token def that takes confirmation type as input

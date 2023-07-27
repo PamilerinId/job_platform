@@ -165,7 +165,9 @@ async def password_reset_request(payload: PasswordResetRequestSchema,
     return  {"message": "Password reset requested successfully", "data":data}
 
 
-@router.post('/change-password')
+@router.post('/change-password',
+             response_model=CustomResponse[BaseUser], 
+             response_model_exclude_none=True)
 async def change_password(payload: PasswordChangeSchema, 
                           current_user: Annotated[BaseUser, Depends(get_current_user)],
                           db: Session = Depends(get_db)):
@@ -181,7 +183,7 @@ async def change_password(payload: PasswordChangeSchema,
     db.commit()
     db.refresh(new_user)
     # TODO: Trigger email confirmation
-    return  {"message": "Password update successful", "user": BaseUser.from_orm(user.first())}
+    return  {"message": "Password update successful", "data": BaseUser.from_orm(user.first())}
 
 
 @router.post('/confirm-email')
