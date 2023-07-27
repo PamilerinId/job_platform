@@ -5,7 +5,7 @@ from .base import (
     ForbiddenException,
     UnprocessableEntity,
     DuplicateValueException,
-    UnauthorizedException,
+    UnauthorizedException
 )
 from .auth import (
     DecodeTokenException, 
@@ -13,8 +13,7 @@ from .auth import (
     PasswordDoesNotMatchException,
     DuplicateEmailException,
     UserNotFoundException,
-    UnauthorisedUserException,
-    IncorrectEmailException
+    UnauthorisedUserException
 )
 
 
@@ -31,6 +30,5 @@ __all__ = [
     "PasswordDoesNotMatchException",
     "DuplicateEmailException",
     "UserNotFoundException",
-    "UnauthorisedUserException",
-    "IncorrectEmailException"
+    "UnauthorisedUserException"
 ]

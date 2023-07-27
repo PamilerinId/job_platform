@@ -14,6 +14,9 @@ class RefreshTokenSchema(BaseModel):
     token: str = Field(..., description="Token")
     refresh_token: str = Field(..., description="Refresh token")
 
+class PasswordResetRequestSchema(BaseModel):
+    email: EmailStr
+    
 class PasswordChangeSchema(BaseModel):
     password: constr(min_length=8)
 

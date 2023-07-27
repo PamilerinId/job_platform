@@ -1,10 +1,10 @@
 from datetime import timedelta
 from typing import Annotated
 
+from fastapi import Request
 from fastapi import Depends, HTTPException, status, APIRouter, Response
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.encoders import jsonable_encoder
-from pydantic import EmailStr
 from sqlalchemy.orm import Session
 
 from core.dependencies.sessions import get_db
@@ -14,7 +14,7 @@ from core.helpers.schemas import CustomResponse
 from core.env import config
 from core.exceptions import *
 
-from services.auth.schemas import LoginUserSchema, RefreshTokenSchema, RegisterUserSchema
+from services.auth.schemas import LoginUserSchema, PasswordChangeSchema, PasswordResetRequestSchema, RegisterUserSchema
 from services.users.models import Company, User
 from services.users.schemas import *
 
@@ -38,7 +38,7 @@ async def login_for_access_token(
     user = db.query(User).filter(
         User.email == form_data.username.lower()).first()
     if not user:
-        raise IncorrectEmailException
+        raise UserNotFoundException
 
     # Check if user verified his email
     # if not user.email_verified:
@@ -49,7 +49,6 @@ async def login_for_access_token(
         raise PasswordDoesNotMatchException
 
     access_token = TokenHelper.encode(jsonable_encoder(BaseUser.from_orm(user)))
-    print
     return {"access_token": access_token, "token_type": "bearer"}
 
 
@@ -123,12 +122,12 @@ Pass email, password
              status_code=status.HTTP_200_OK,
              response_model=CustomResponse[AuthUser], 
              response_model_exclude_none=True)
-def login(payload: LoginUserSchema, response: Response, db: Session = Depends(get_db)):
+def login(payload: LoginUserSchema, db: Session = Depends(get_db)):
     # Check if the user exist
     user = db.query(User).filter(
         User.email == payload.email.lower()).first()
     if not user:
-        raise IncorrectEmailException
+        raise UserNotFoundException
 
     # Check if user verified his email
     # if not user.email_verified:
@@ -149,19 +148,45 @@ def logout(response: Response):
     # TODO: blacklist in redis cache
     return {'status': 'success'}
 
-
-@router.post('/reset-password')
-async def password_reset_request():
-    return True
+@router.post('/reset-password',
+             response_model=CustomResponse, 
+             response_model_exclude_none=True)
+async def password_reset_request(payload: PasswordResetRequestSchema, 
+                                 db: Session = Depends(get_db)):
+    # Check if the user exist
+    user = db.query(User).filter(
+        User.email == payload.email.lower()).first()
+    if not user:
+        raise UserNotFoundException
+    
+    # Generate token and TODO: send mail
+    data =  {"token":TokenHelper.encode({"id": user.id, "email": user.email}, 900)}
+    
+    return  {"message": "Password reset requested successfully", "data":data}
 
 
 @router.post('/change-password')
-async def change_password():
-    return True
+async def change_password(payload: PasswordChangeSchema, 
+                          current_user: Annotated[BaseUser, Depends(get_current_user)],
+                          db: Session = Depends(get_db)):
+    
+    payload.password = password.hash_password(payload.password)
+    # TODO: Refactor to repository
+    # new_user.modified = datetime.utcnow()
+    user = db.query(User).filter(User.email == current_user.email)
+    new_user = user.first()
+    if user is None:
+        raise UserNotFoundException
+    user.update(payload.dict(),)
+    db.commit()
+    db.refresh(new_user)
+    # TODO: Trigger email confirmation
+    return  {"message": "Password update successful", "user": BaseUser.from_orm(user.first())}
 
 
 @router.post('/confirm-email')
 async def confirm_email():
+    # Get token as header and update confirm email field
     return True
 
 
@@ -170,14 +195,10 @@ async def confirm_email():
             response_model=CustomResponse[BaseUser], 
             response_model_exclude_none=True)
 def get_current_user(current_user: Annotated[BaseUser, Depends(get_current_user)]):
-
     data =  { 
         **jsonable_encoder(BaseUser.from_orm(current_user))
         }
-    
     return  {"message": "User profile successfully retrieved", "data": data}
-
-
 # TODO: 
 # - Reset password /reset-password
 # - Change password /change-password

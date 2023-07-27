@@ -12,13 +12,13 @@ from core.env import config
 from services.users.schemas import BaseUser
 
 '''
-Check for permissions here and call from dependencies
+TODO: Check for permissions here and call from dependencies
 '''
 class AuthBackend(AuthenticationBackend):
     async def authenticate(
         self, conn: HTTPConnection
     ) -> Tuple[bool, Optional[BaseUser]]:
-        current_user: BaseUser()
+        current_user: BaseUser() = None
         authorization: str = conn.headers.get("Authorization")
         if not authorization:
             return False, current_user
@@ -39,8 +39,6 @@ class AuthBackend(AuthenticationBackend):
             )
         except jwt.exceptions.PyJWTError:
             return False, current_user
-
-        print(current_user, flush=True)
         return True, current_user
 
 

@@ -51,7 +51,7 @@ def on_auth_error(request: Request, exc: Exception):
 
     return JSONResponse(
         status_code=status_code,
-        content={"error_code": error_code, "message": message},
+        content={"code": status_code,"error_code": error_code, "message": message},
     )
 
 

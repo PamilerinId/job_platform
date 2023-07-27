@@ -1,21 +1,19 @@
 import base64
 from datetime import datetime, timedelta
-from typing import Annotated, Dict, List
-from core.exceptions.base import UnauthorizedException
+from typing import Annotated
 
 import jwt
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, Request
 from fastapi.security import OAuth2PasswordBearer
-from pydantic import BaseModel
-
 from sqlalchemy.orm import Session
+
 from services.users.schemas import BaseUser
 from services.auth.schemas import RefreshTokenSchema
-
 from services.users.models import User
 
 from core.env import config
 from core.dependencies.sessions import get_db
+from core.exceptions.base import UnauthorizedException
 from core.exceptions.auth import DecodeTokenException, ExpiredTokenException, UserNotFoundException
 
 
@@ -75,10 +73,16 @@ class TokenHelper:
         )
 
 
-async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], 
+async def get_current_user(request: Request, token: Annotated[str, Depends(oauth2_scheme)], 
                            db: Session = Depends(get_db)) -> BaseUser:
-    payload = TokenHelper.decode(token)
-    user_email: str = payload.get("email")
+    user_decoded_string : str
+    # TODO: Refactor token capture, decode and validation into middleware [using oauth bearer doesnt work in middleware]
+    # Get decoded token from auth middleware
+    if request.user:
+        user_decoded_string = request.user  
+    else: # Get token from headers
+        user_decoded_string = TokenHelper.decode(token)
+    user_email: str = user_decoded_string.get("email")
     if user_email is None:
         raise UnauthorizedException(message="Could not validate credentials")
     user = db.query(User).filter(User.email == user_email).first()

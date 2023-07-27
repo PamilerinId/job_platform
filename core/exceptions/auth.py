@@ -12,12 +12,6 @@ class ExpiredTokenException(CustomException):
     error_code = "TOKEN__EXPIRE_TOKEN"
     message = "Expired token"
 
-    
-class IncorrectEmailException(CustomException):
-    code = 401
-    error_code = "USER__PASSWORD_DOES_NOT_MATCH"
-    message = "Incorrect email match"
-
 class PasswordDoesNotMatchException(CustomException):
     code = 401
     error_code = "USER__PASSWORD_DOES_NOT_MATCH"

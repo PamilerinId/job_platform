@@ -42,7 +42,7 @@ class UpdateCompanySchema(BaseModel):
 
 ####################### Users #################
 class BaseUser(BaseModel):
-    id: Optional[UUID]
+    id: Optional[UUID] = None
     email: EmailStr = Field(None, description="email")
     first_name: str = Field(None, description="First Name")
     last_name: str = Field(None, description="Last Name")
