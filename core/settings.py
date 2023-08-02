@@ -19,7 +19,7 @@ from core.middlewares import (
     AuthenticationMiddleware,
     AuthBackend,
     # SQLAlchemyMiddleware,
-    # ResponseLogMiddleware,
+    ResponseLogMiddleware,
 )
 # from core.helpers.cache import Cache, RedisBackend, CustomKeyMaker
 # from core.helpers.db import CoreModel
@@ -58,7 +58,7 @@ def on_auth_error(request: Request, exc: Exception):
 def init_middleware(app_: FastAPI) -> None:
     app_.add_middleware(
         CORSMiddleware,
-        allow_origins=["*", "http://localhost", "http://localhost:8080"],
+        allow_origins=["*" ],
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
@@ -69,7 +69,7 @@ def init_middleware(app_: FastAPI) -> None:
         on_error=on_auth_error,
     )
     # Middleware(SQLAlchemyMiddleware),
-    # Middleware(ResponseLogMiddleware),
+    app_.add_middleware(ResponseLogMiddleware)
 
 
 # def init_cache() -> None:

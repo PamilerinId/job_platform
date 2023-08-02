@@ -42,6 +42,6 @@ class UnprocessableEntity(CustomException):
 
 
 class DuplicateValueException(CustomException):
-    code = HTTPStatus.UNPROCESSABLE_ENTITY
-    error_code = HTTPStatus.UNPROCESSABLE_ENTITY
-    message = HTTPStatus.UNPROCESSABLE_ENTITY.description
+    code = HTTPStatus.CONFLICT
+    error_code = HTTPStatus.CONFLICT
+    message = HTTPStatus.CONFLICT.description

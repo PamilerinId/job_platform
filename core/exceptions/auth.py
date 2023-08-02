@@ -31,4 +31,10 @@ class DuplicateEmailException(CustomException):
 class UserNotFoundException(CustomException):
     code = 404
     error_code = "USER__NOT_FOUND"
-    message = "user not found"
+    message = "User not found"
+
+
+class DuplicateCompanyException(CustomException):
+    code = 409
+    error_code = "COMPANY__DUPLICATE_NAME"
+    message = "Company may already exist"

@@ -13,7 +13,8 @@ from .auth import (
     PasswordDoesNotMatchException,
     DuplicateEmailException,
     UserNotFoundException,
-    UnauthorisedUserException
+    UnauthorisedUserException,
+    DuplicateCompanyException
 )
 
 
@@ -30,5 +31,6 @@ __all__ = [
     "PasswordDoesNotMatchException",
     "DuplicateEmailException",
     "UserNotFoundException",
-    "UnauthorisedUserException"
+    "UnauthorisedUserException",
+    "DuplicateCompanyException"
 ]

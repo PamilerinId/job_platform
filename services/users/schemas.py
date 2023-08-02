@@ -25,6 +25,7 @@ class ListCompanyResponse(BaseModel):
 
 class CompanyResponse(BaseCompany):
     id: UUID
+    slug: str
     created_at: datetime
     updated_at: datetime
 
