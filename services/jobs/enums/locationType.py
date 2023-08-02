@@ -1,6 +1,6 @@
 import enum
 
 class LocationType(str, enum.Enum):
-    OFFICE = 'OFFICE'
+    ONSITE = 'ONSITE'
     REMOTE = 'REMOTE'
     HYBRID = 'HYBRID'

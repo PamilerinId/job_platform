@@ -48,6 +48,7 @@ class BaseUser(BaseModel):
     first_name: str = Field(None, description="First Name")
     last_name: str = Field(None, description="Last Name")
     role: Optional[UserType]=None
+    company: Optional[BaseCompany]=None
 
     class Config:
         from_attributes=True
@@ -62,3 +63,8 @@ class ListUserResponse(BaseModel):
     status: str
     results: int
     users: List[BaseUser]
+
+
+class BaseCandidate(BaseModel):
+    user: BaseUser
+    cv: str

@@ -1,8 +1,9 @@
 import uuid
 import enum
-from sqlalchemy import (
-    TIMESTAMP, Column, ForeignKey, String, 
-    Boolean, text, Enum, Integer, Text, ARRAY)
+from sqlalchemy import (TIMESTAMP, Column, ForeignKey, 
+                        String, Boolean, text, Enum, Integer, 
+                        Text, cast, Index)
+from sqlalchemy.dialects.postgresql import ARRAY, array
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy_mixins import AllFeaturesMixin
@@ -14,6 +15,13 @@ class UserType(str, enum.Enum):
     CLIENT = 'CLIENT'
     ADMIN = 'ADMIN'
     SUPER_ADMIN = 'SUPER_ADMIN'
+
+
+class CompanySize(str, enum.Enum):
+    UNDER_50 = 'UNDER_50'
+    UNDER_100 = 'UNDER_100'
+    UNDER_500 = 'UNDER_500'
+    OVER_1000 = 'OVER_1000'
     
 
 
@@ -39,7 +47,30 @@ class Company(Base):
                         nullable=False, onupdate=text("now()"))
     
     def __repr__(self):
-        return f"<Compay {self.name}>"
+        return f"<Company {self.name}>"
+    
+class CompanyProfile(Base):
+    __tablename__ = "company_profiles"
+    id = Column(UUID(as_uuid=True), primary_key=True, nullable=False,
+                default=uuid.uuid4)
+    company_id = Column(UUID(as_uuid=True), ForeignKey("companies.id"))
+    company = relationship("Company")
+    address = Column(Text, nullable=True)
+    location = Column(String, nullable=True)
+    website = Column(String, nullable=True)
+    support_mail = Column(String, nullable=True)
+    linkedin_url = Column(String, nullable=True)
+    funding = Column(String, nullable=True)
+    size = Column(Enum(CompanySize), nullable=True)
+    # type = Column(Enum(UserType), nullable=True)
+    # settings, type,  rating as foreign key   
+
+    # Audit logs
+    created_at = Column(TIMESTAMP(timezone=True),
+                        nullable=False, server_default=text("now()"))
+    updated_at = Column(TIMESTAMP(timezone=True),
+                        nullable=False, onupdate=text("now()"))
+
 
 
 class User(Base):
@@ -71,18 +102,32 @@ class User(Base):
     def __repr__(self):
         return f"<User {self.email}>"
 
+class CandidateProfile(Base):
+    __tablename__ = "candidate_profiles"
+    id = Column(UUID(as_uuid=True), primary_key=True, nullable=False,
+                default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"))
+    user = relationship("User")
+    phone = Column(String, nullable=True)
+    industry_role = Column(String, nullable=True)
+    
+    industries = Column(ARRAY(String), nullable=True, default=cast(array([], type_=String), ARRAY(String)))
+    __table_args__ = (Index('ix_candidate_industries', industries, postgresql_using="gin"), )
+    
+    cv = Column(ARRAY(String), nullable=True) # Foreign key to Files
+    years_of_experience = Column(Integer, nullable=True)
+    
+    skills =  Column(ARRAY(String), nullable=False, default=cast(array([], type_=String), ARRAY(String)))
+    __table_args__ = (Index('ix_candidate_skills', industries, postgresql_using="gin"), )
 
+    current_earnings = Column(String, nullable=True)
+    desired_earnings = Column(String, nullable=True)
 
-# class CandidateProfile(Base):
-#     __tablename__ = "candidate_profiles"
-#     industry_role, industries, cv(s), score, years of experience, 
-#        current/desired earnings, skills
-#      applications = relationship("Application")
+    applications = relationship("Application")
 
-# class CompanyProfile(Base):
-#     __tablename__ = "company_profiles"
-#     address, location, website, social, support_mail, funding, settings, 
-# size, type,  rating as foreign key
-#    
-
+    # Audit logs
+    created_at = Column(TIMESTAMP(timezone=True),
+                        nullable=False, server_default=text("now()"))
+    updated_at = Column(TIMESTAMP(timezone=True),
+                        nullable=False, onupdate=text("now()"))
 

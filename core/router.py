@@ -3,6 +3,7 @@ from fastapi import APIRouter, Response, Depends
 from core.dependencies import PermissionDependency, AllowAll
 from services.auth.services import router as auth_router
 from services.users.services import router as user_router
+from services.jobs.services import router as jobs_router
 
 router = APIRouter(
      prefix="/api/v1"
@@ -21,6 +22,7 @@ async def health_check():
 
 router.include_router(user_router)
 router.include_router(auth_router)
+router.include_router(jobs_router)
 
 
 __all__ = ["router"]

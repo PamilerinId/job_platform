@@ -12,6 +12,11 @@ class CustomResponse(BaseModel, Generic[DataT]):
     message: Optional[str]
     data: Optional[DataT] = None
 
+class CustomListResponse(BaseModel, Generic[DataT]):
+    status: Optional[str] = 'success'
+    code: Optional[str] = "200"
+    message: Optional[str]
+    data: Optional[List[DataT]] = None
 
 # Mailing Schemas
 class EmailParameters(BaseModel, Generic[DataT]):

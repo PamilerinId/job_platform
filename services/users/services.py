@@ -3,7 +3,7 @@ import secrets
 from typing import Annotated
 import uuid
 from slugify import slugify
-from core.exceptions.auth import DuplicateCompanyException
+from core.exceptions import DuplicateCompanyException
 
 
 from fastapi import Depends, HTTPException, status, APIRouter, Response
@@ -25,18 +25,20 @@ async def fetch_companies(db: Session = Depends(get_db), limit: int = 10, page: 
 
     companies = db.query(Company).group_by(Company.id).filter(
         Company.name.contains(search)).limit(limit).offset(skip).all()
-    return {'status': 'success', 'cout': len(companies), 'data': companies}
+    # fetch profile
+    return {'status': 'success', 'count': len(companies), 'data': companies}
 
 @router.post('/companies', status_code=status.HTTP_201_CREATED, response_model=CompanyResponse, tags=["Companies"])
 def create_company(payload: CreateCompanySchema,
                    current_user: Annotated[BaseUser, Depends(get_current_user)],
                    db: Session = Depends(get_db), ):
     
-    # Refactor to utils
+    #TODO: Refactor to utils
     slug = slugify(payload.name, max_length=15, word_boundary=True, 
                 separator=".", stopwords=['the', 'and', 'of'])
     
     company = db.query(Company).filter(Company.slug == slug).first()
+    # fetch profile and update
 
     if company:
         # Contact company owner message, reach out to support email
@@ -51,7 +53,7 @@ def create_company(payload: CreateCompanySchema,
     db.refresh(new_company)
     return new_company
 
-
+# @router.patch('/companies')
 
 # @router.get('/me', response_model=BaseUser, tags=["User"])
 # def get_me(db: Session = Depends(get_db)):#, user_id: str = Depends(require_user)):

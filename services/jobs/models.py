@@ -1,7 +1,7 @@
 import uuid
 from sqlalchemy import (TIMESTAMP, Column, ForeignKey, 
-                        String, Boolean, text, Enum, Integer, 
-                        ARRAY, Text, cast, Index, array)
+                        String, Boolean, text, Enum, Integer, Text, cast, Index)
+from sqlalchemy.dialects.postgresql import ARRAY, array
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy_mixins import AllFeaturesMixin
@@ -9,7 +9,7 @@ from sqlalchemy_mixins import AllFeaturesMixin
 
 from core.dependencies.sessions import Base
 
-from users.models import Company
+from services.users.models import Company
 from .enums import (
     ExperienceLevel, Currency, JobType, JobStatus, 
                     LocationType, Qualification, ApplicationStatus)
@@ -46,6 +46,7 @@ class Job(Base):
     # Company owner
     company_id=Column(UUID(as_uuid=True), ForeignKey("companies.id"))
     company = relationship("Company")
+
     # Audit logs
     created_at = Column(TIMESTAMP(timezone=True),
                         nullable=False, server_default=text("now()"))
@@ -57,15 +58,16 @@ class Application:
     __tablename__ = "applications"
     id = Column(UUID(as_uuid=True), primary_key=True, nullable=False,
                 default=uuid.uuid4)
-    status = Column(Enum(ApplicationStatus), nullable=False)
+    status = Column(Enum(ApplicationStatus), server_default=ApplicationStatus.PENDING,nullable=False)
 
     # 
     job_id = Column(UUID(as_uuid=True), ForeignKey("jobs.id"))#one to many
-    applicant_id = Column(UUID(as_uuid=True), ForeignKey("candidate_profiles.user.id"))#many to one
-
-    job = relationship("jobs")
-    applicant = relationship("candidate_profiles")
+    applicant_id = Column(UUID(as_uuid=True), ForeignKey("users.id"))#many to one
     comment = Column(Text(),  nullable=False)
+
+    job = relationship("Job")
+    applicant = relationship("User")
+
     # Audit logs
     created_at = Column(TIMESTAMP(timezone=True),
                         nullable=False, server_default=text("now()"))
