@@ -56,14 +56,13 @@ def on_auth_error(request: Request, exc: Exception):
 def init_middleware(app_: FastAPI) -> None:
     app_.add_middleware(
         CORSMiddleware,
-        allow_origins=["http://localhost",
-                        "http://localhost:8000",
-                        "http://localhost:3000",
-                        "http://staging-v2.distinct.ai/",
-                        "https://staging-v2.distinct.ai/"],
+        allow_origins=['http://localhost:3000/',
+                        'http://localhost:8000/',
+                        'http://staging-v2.distinct.ai/',
+                        'https://staging-v2.distinct.ai/', '*'],
         allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_methods=['*'],
+        allow_headers=['*'],
     )
     app_.add_middleware(
         AuthenticationMiddleware,
