@@ -4,7 +4,6 @@ from typing import List
 
 
 from fastapi import FastAPI, Request, Depends
-from fastapi.middleware import Middleware
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
@@ -90,7 +89,11 @@ def create_app() -> FastAPI:
 
     app_.add_middleware(
         CORSMiddleware,
-        allow_origins=["localhost", "*"],
+        allow_origins=["http://localhost",
+                        "http://localhost:8000",
+                        "http://localhost:3000",
+                        "http://staging-v2.distinct.ai/",
+                        "https://staging-v2.distinct.ai/"],
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
