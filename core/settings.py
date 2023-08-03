@@ -7,13 +7,13 @@ from fastapi import FastAPI, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-import sentry_sdk
+# import sentry_sdk
 
 
 from core.router import router
 from core.env import config
 from core.exceptions import CustomException
-from core.dependencies import Logging, engine
+from core.dependencies import Logging, engine, Base
 from core.middlewares import (
     AuthenticationMiddleware,
     AuthBackend,
@@ -21,11 +21,10 @@ from core.middlewares import (
     ResponseLogMiddleware,
 )
 # from core.helpers.cache import Cache, RedisBackend, CustomKeyMaker
-# from core.helpers.db import CoreModel
 
 
-# def init_db(app_: FastAPI) -> None:
-#     CoreModel.metadata.create_all(bind=engine)
+def init_db(app_: FastAPI) -> None:
+    Base.metadata.create_all(bind=engine)
 
 def init_routers(app_: FastAPI) -> None:
     app_.include_router(router)
@@ -56,6 +55,17 @@ def on_auth_error(request: Request, exc: Exception):
 
 def init_middleware(app_: FastAPI) -> None:
     app_.add_middleware(
+        CORSMiddleware,
+        allow_origins=["http://localhost",
+                        "http://localhost:8000",
+                        "http://localhost:3000",
+                        "http://staging-v2.distinct.ai/",
+                        "https://staging-v2.distinct.ai/"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+    app_.add_middleware(
         AuthenticationMiddleware,
         backend=AuthBackend(),
         on_error=on_auth_error,
@@ -67,14 +77,14 @@ def init_middleware(app_: FastAPI) -> None:
 # def init_cache() -> None:
 #     Cache.init(backend=RedisBackend(), key_maker=CustomKeyMaker())
 
-sentry_sdk.init(
-    dsn=config.SENTRY_DSN,
+# sentry_sdk.init(
+#     dsn=config.SENTRY_DSN,
 
-    # Set traces_sample_rate to 1.0 to capture 100%
-    # of transactions for performance monitoring.
-    # We recommend adjusting this value in production,
-    traces_sample_rate=1.0,
-)
+#     # Set traces_sample_rate to 1.0 to capture 100%
+#     # of transactions for performance monitoring.
+#     # We recommend adjusting this value in production,
+#     traces_sample_rate=1.0,
+# )
 
 def create_app() -> FastAPI:
     app_ = FastAPI(
@@ -86,19 +96,7 @@ def create_app() -> FastAPI:
         dependencies=[Depends(Logging)],
         # openapi_tags=tags_metadata
     )
-
-    app_.add_middleware(
-        CORSMiddleware,
-        allow_origins=["http://localhost",
-                        "http://localhost:8000",
-                        "http://localhost:3000",
-                        "http://staging-v2.distinct.ai/",
-                        "https://staging-v2.distinct.ai/"],
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
-
+    init_db(app_=app_)
     init_routers(app_=app_)
     init_listeners(app_=app_)
     init_middleware(app_=app_)
