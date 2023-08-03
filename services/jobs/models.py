@@ -9,7 +9,7 @@ from sqlalchemy_mixins import AllFeaturesMixin
 
 from core.dependencies.sessions import Base
 
-from services.users.models import Company
+# from services.users.models import Company
 from .enums import (
     ExperienceLevel, Currency, JobType, JobStatus, 
                     LocationType, Qualification, ApplicationStatus)
@@ -54,7 +54,7 @@ class Job(Base):
                         nullable=False, onupdate=text("now()"))
     
 
-class Application:
+class Application(Base):
     __tablename__ = "applications"
     id = Column(UUID(as_uuid=True), primary_key=True, nullable=False,
                 default=uuid.uuid4)

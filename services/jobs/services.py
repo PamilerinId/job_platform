@@ -1,6 +1,5 @@
 from typing import Annotated
-from slugify import slugify
-from core.exceptions.base import DuplicateValueException
+from core.exceptions.base import DuplicateValueException, NotFoundException
 from fastapi import Depends, HTTPException, status, APIRouter, Response
 from services.users.models import UserType
 from services.users.schemas import BaseUser
@@ -9,6 +8,7 @@ from sqlalchemy.orm import Session
 from core.dependencies.sessions import get_db
 from core.dependencies.auth import get_current_user
 from core.helpers.schemas import CustomResponse, CustomListResponse
+from core.helpers.text_utils import to_slug
 
 from .models import Job, Application
 from .schemas import *
@@ -28,7 +28,7 @@ async def fetch_jobs(current_user: Annotated[BaseUser, Depends(get_current_user)
     # if user is candidate; get industry related tags
     if (current_user.role == UserType.CANDIDATE):
         jobs_query = db.query(Job).group_by(Job.id).filter(
-            Job.tags.contains(search))
+            Job.tags.contains([search]))
     # if user is client; filter by company jobs
     elif(current_user.role == UserType.CLIENT):
         jobs_query = db.query(Job).group_by(Job.id).filter(
@@ -36,6 +36,8 @@ async def fetch_jobs(current_user: Annotated[BaseUser, Depends(get_current_user)
     # if no user; no jobs
     # if thirdparty; filter tier [distinct user]
     jobs = jobs_query.limit(limit).offset(skip).all()
+    if len(jobs) < 1: 
+        raise NotFoundException('No Jobs found')
     return {'message': 'Jobs retrieved successfully', 'data': jobs}
 
 
@@ -45,17 +47,16 @@ def create_job(payload: CreateJobSchema,
                    db: Session = Depends(get_db), ):
     
     #TODO: Refactor to utils
-    slug = slugify(payload.title, max_length=15, word_boundary=True, 
-                separator=".", stopwords=['the', 'and', 'of'])
     # TODO: update tags with field slugs
-    
-    job = db.query(Job).filter(Job.company_id == current_user.company.id ,Job.slug == slug).first()
+    title_slug = to_slug(payload.title)
+    job = db.query(Job).filter(Job.company_id == current_user.company.id ,Job.slug == title_slug).first()
     if job:
         # Contact company owner message, reach out to support email
         raise DuplicateValueException
     
     new_job = Job(**payload.__dict__)
-    new_job.slug = slug
+    new_job.slug = title_slug
+    new_job.tags.append(title_slug, to_slug(payload.type), to_slug(payload.title), to_slug(payload.title))
     new_job.company_id = current_user.company.id
     db.add(new_job)
     db.commit()
@@ -63,7 +64,9 @@ def create_job(payload: CreateJobSchema,
 
     return {"message":"Job ad draft has been created successfully","data": new_job}
 
-
+@router.patch('/')
+def update_job():
+    pass
 # patch job
 # create application [apply to job]
 # fetch applications

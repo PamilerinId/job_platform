@@ -57,13 +57,6 @@ def on_auth_error(request: Request, exc: Exception):
 
 def init_middleware(app_: FastAPI) -> None:
     app_.add_middleware(
-        CORSMiddleware,
-        allow_origins=["*" ],
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
-    app_.add_middleware(
         AuthenticationMiddleware,
         backend=AuthBackend(),
         on_error=on_auth_error,
@@ -91,7 +84,16 @@ def create_app() -> FastAPI:
         version="2.0.0",
         docs_url=None if config.ENV == "production" else "/docs",
         redoc_url=None if config.ENV == "production" else "/redoc",
-        dependencies=[Depends(Logging)]
+        dependencies=[Depends(Logging)],
+        # openapi_tags=tags_metadata
+    )
+
+    app_.add_middleware(
+        CORSMiddleware,
+        allow_origins=["localhost", "*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
     )
 
     init_routers(app_=app_)

@@ -63,19 +63,19 @@ async def login_for_access_token(
              status_code=status.HTTP_201_CREATED, 
              response_model=CustomResponse[AuthUser], 
              response_model_exclude_none=True)
-async def create_user(payload: RegisterUserSchema, db: Session = Depends(get_db)):
+async def create_candidate(payload: RegisterUserSchema, db: Session = Depends(get_db)):
     # Check if user already exist
     user = db.query(User).filter(User.email == payload.email.lower()).first()
     if user:
         raise DuplicateEmailException
     #  Hash the password
     payload.password = password.hash_password(payload.password)
-    payload.role = UserType.CANDIDATE
-    payload.email = payload.email.lower()
     new_user = User(**payload.dict())
+    new_user.role = UserType.CANDIDATE
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
+    # TODO: Generate confirm email OTP and Send Welcome email
     data =  { **jsonable_encoder(BaseUser.from_orm(new_user)), 
             "token":TokenHelper.encode(jsonable_encoder(BaseUser.from_orm(new_user)))}
     
@@ -91,22 +91,22 @@ async def create_user(payload: RegisterUserSchema, db: Session = Depends(get_db)
              status_code=status.HTTP_201_CREATED, 
              response_model=CustomResponse[AuthUser], 
              response_model_exclude_none=True)
-async def create_user(payload: RegisterUserSchema, db: Session = Depends(get_db)):
+async def create_client(payload: RegisterUserSchema, db: Session = Depends(get_db)):
     # Check if user already exist
     user = db.query(User).filter(
         User.email == payload.email.lower()).first()
     if user:
         raise DuplicateEmailException
-    # Compare password and passwordConfirm
     #  Hash the password
     payload.password = password.hash_password(payload.password)
-    payload.role = UserType.CLIENT
     payload.email = payload.email.lower()
     new_user = User(**payload.dict())
+    new_user.role = UserType.CLIENT
     # TODO: Refactor to repository
     db.add(new_user)
-    await db.commit()
+    db.commit()
     db.refresh(new_user)
+    #TODO: Generate confirm email OTP and Send Welcome email
     data =  { **jsonable_encoder(BaseUser.from_orm(new_user)), 
             "token":TokenHelper.encode(jsonable_encoder(BaseUser.from_orm(new_user)))}
     
@@ -179,7 +179,7 @@ async def change_password(payload: PasswordChangeSchema,
     new_user = user.first()
     if user is None:
         raise UserNotFoundException
-    user.update(payload.dict(),)
+    user.update(payload.dict())
     db.commit()
     db.refresh(new_user)
     # TODO: Trigger email confirmation
@@ -202,7 +202,9 @@ def get_current_user(current_user: Annotated[BaseUser, Depends(get_current_user)
         **jsonable_encoder(BaseUser.from_orm(current_user))
         }
     return  {"message": "User profile successfully retrieved", "data": data}
-# TODO: 
+
+
+#  TODO: 
 # - Reset password /reset-password
 # - Change password /change-password
 # - Confirm email /confirm-email

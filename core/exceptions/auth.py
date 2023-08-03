@@ -37,4 +37,4 @@ class UserNotFoundException(CustomException):
 class DuplicateCompanyException(CustomException):
     code = 409
     error_code = "COMPANY__DUPLICATE_NAME"
-    message = "Company may already exist"
+    message = "Company may already exist, please contact support"

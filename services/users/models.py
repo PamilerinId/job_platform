@@ -40,11 +40,15 @@ class Company(Base):
     # company verified checks [not a ble to post jobs unless verified]
     verified = Column(Boolean, nullable=False, server_default='False')
 
+    profile = relationship(
+            "CompanyProfile",
+            back_populates="company", uselist=False)
+
     # Audit logs
     created_at = Column(TIMESTAMP(timezone=True),
                         nullable=False, server_default=text("now()"))
     updated_at = Column(TIMESTAMP(timezone=True),
-                        nullable=False, onupdate=text("now()"))
+                        nullable=False, server_default=text("now()"), onupdate=text("now()"))
     
     def __repr__(self):
         return f"<Company {self.name}>"
@@ -54,7 +58,7 @@ class CompanyProfile(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, nullable=False,
                 default=uuid.uuid4)
     company_id = Column(UUID(as_uuid=True), ForeignKey("companies.id"))
-    company = relationship("Company")
+    company = relationship("Company", back_populates='profile')
     address = Column(Text, nullable=True)
     location = Column(String, nullable=True)
     website = Column(String, nullable=True)
@@ -69,7 +73,7 @@ class CompanyProfile(Base):
     created_at = Column(TIMESTAMP(timezone=True),
                         nullable=False, server_default=text("now()"))
     updated_at = Column(TIMESTAMP(timezone=True),
-                        nullable=False, onupdate=text("now()"))
+                        nullable=False, server_default=text("now()"))
 
 
 
@@ -85,6 +89,7 @@ class User(Base):
     role = Column(Enum(UserType), server_default = UserType.CANDIDATE, nullable=False)
 
     # candidates by default have no company id
+    # candidate_profile = relationship('CandidateProfile', uselist=False, backref="users")
     company_id = Column(UUID, ForeignKey("companies.id"))
     company = relationship('Company')
 
@@ -97,7 +102,7 @@ class User(Base):
     created_at = Column(TIMESTAMP(timezone=True),
                         nullable=False, server_default=text("now()"))
     updated_at = Column(TIMESTAMP(timezone=True),
-                        nullable=False, onupdate=text("now()"))
+                        nullable=False, server_default=text("now()"), onupdate=text("now()"))
     
     def __repr__(self):
         return f"<User {self.email}>"
@@ -107,7 +112,6 @@ class CandidateProfile(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, nullable=False,
                 default=uuid.uuid4)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"))
-    user = relationship("User")
     phone = Column(String, nullable=True)
     industry_role = Column(String, nullable=True)
     
@@ -123,11 +127,11 @@ class CandidateProfile(Base):
     current_earnings = Column(String, nullable=True)
     desired_earnings = Column(String, nullable=True)
 
-    applications = relationship("Application")
+    user =  relationship('User')
 
     # Audit logs
     created_at = Column(TIMESTAMP(timezone=True),
                         nullable=False, server_default=text("now()"))
     updated_at = Column(TIMESTAMP(timezone=True),
-                        nullable=False, onupdate=text("now()"))
+                        nullable=False, server_default=text("now()"), onupdate=text("now()"))
 

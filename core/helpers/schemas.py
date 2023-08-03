@@ -16,6 +16,7 @@ class CustomListResponse(BaseModel, Generic[DataT]):
     status: Optional[str] = 'success'
     code: Optional[str] = "200"
     message: Optional[str]
+    count: Optional[int]
     data: Optional[List[DataT]] = None
 
 # Mailing Schemas

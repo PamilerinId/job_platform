@@ -1,8 +1,8 @@
 from pydantic import BaseModel, Field, EmailStr, constr
-from services.users.schemas import BaseUser
+from services.users.schemas import CreateUser
 
 
-class RegisterUserSchema(BaseUser):
+class RegisterUserSchema(CreateUser):
     password: constr(min_length=8)
 
 

@@ -9,6 +9,7 @@ from core.env import config as settings
 from core.dependencies.sessions import Base
 
 from services.users.models import *
+from services.jobs.models import *
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
