@@ -17,6 +17,10 @@ class CompanyProfile(BaseModel):
     funding: Optional[str]
     size: Optional[CompanySize]
 
+    class Config:
+        from_attributes=True
+
+
 class BaseCompany(BaseModel):
     id: Optional[UUID] = None
     name: str = None
