@@ -63,7 +63,7 @@ class Application(Base):
     # 
     job_id = Column(UUID(as_uuid=True), ForeignKey("jobs.id"))#one to many
     applicant_id = Column(UUID(as_uuid=True), ForeignKey("users.id"))#many to one
-    comment = Column(Text(),  nullable=False)
+    comment = Column(Text(),  nullable=True)
 
     job = relationship("Job")
     applicant = relationship("User")
@@ -72,4 +72,4 @@ class Application(Base):
     created_at = Column(TIMESTAMP(timezone=True),
                         nullable=False, server_default=text("now()"))
     updated_at = Column(TIMESTAMP(timezone=True),
-                        nullable=False, onupdate=text("now()"))
+                        nullable=False, server_default=text("now()"), onupdate=text("now()"))

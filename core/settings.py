@@ -24,7 +24,7 @@ from core.middlewares import (
 
 
 def init_db(app_: FastAPI) -> None:
-    Base.metadata.create_all(bind=engine)
+    Base.metadata.create_all(bind=engine, checkfirst=True)
 
 def init_routers(app_: FastAPI) -> None:
     app_.include_router(router)

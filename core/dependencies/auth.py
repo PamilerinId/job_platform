@@ -84,22 +84,54 @@ async def get_current_user(request: Request, token: Annotated[str, Depends(oauth
         else: # Get token from headers
             user_decoded_string = TokenHelper.decode(token)
     except:
-        raise HttpException
+        raise DecodeTokenException("Something went wrong decoding your access token")
+    
+
     user_email: str = user_decoded_string.get("email")
+    role: str = user_decoded_string.get("role")
+
     if user_email is None:
         raise UnauthorizedException(message="Could not validate credentials")
-    user = db.query(User).options(
-            joinedload(User.client_profile)).filter(User.email == user_email).first()
-    if user is None:
-        raise UserNotFoundException
-    print("##########", user.__dict__, BaseUser.from_orm(user), flush=True)
-    # if user.role == UserType.CLIENT:
-    #     return BaseClient.from_orm(user)
-    # elif user.role == UserType.CANDIDATE:
-    #     return BaseCandidate.from_orm(user)
+    
+    if (role == UserType.CLIENT):
+        user = db.query(User).options(
+                joinedload(User.client_profile)).filter(User.email == user_email).first()
+    elif (role == UserType.CANDIDATE):
+        user = db.query(User).options(
+                joinedload(User.candidate_profile)).filter(User.email == user_email).first()
+    else:
+        user = db.query(User).filter(User.email == user_email).first()
 
     return BaseUser.from_orm(user)
 
 
+async def get_current_user_object(request: Request, token: Annotated[str, Depends(oauth2_scheme)], 
+                           db: Session = Depends(get_db)) -> User:
+    user_decoded_string : str
+    # TODO: Refactor token capture, decode and validation into middleware [using oauth bearer doesnt work in middleware]
+    # Get decoded token from auth middleware
+    try:
+        if request.user:
+            user_decoded_string = request.user  
+        else: # Get token from headers
+            user_decoded_string = TokenHelper.decode(token)
+    except:
+        raise DecodeTokenException("Something went wrong decoding your access token")
+    user_email: str = user_decoded_string.get("email")
+    if user_email is None:
+        raise UnauthorizedException(message="Could not validate credentials")
+    
+    role: str = user_decoded_string.get("role")
+    if (role == UserType.CLIENT):
+        user = db.query(User).options(
+                joinedload(User.client_profile)).filter(User.email == user_email).first()
+    elif (role == UserType.CANDIDATE):
+        user = db.query(User).options(
+                joinedload(User.candidate_profile)).filter(User.email == user_email).first()
+    else:
+        user = db.query(User).filter(User.email == user_email).first()
 
-# TODO: implement confirmation token def that takes confirmation type as input
+    if user is None:
+        raise UserNotFoundException
+    return user
+
