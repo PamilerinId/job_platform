@@ -16,13 +16,13 @@ class BaseJob(BaseModel):
     experienceLevel: Optional[ExperienceLevel]
     location: str
     locationType: Optional[LocationType]
-    qualifications: Optional[Qualification]
+    qualifications: Optional[List[Qualification]]
     currency: Optional[Currency]
     salaryRangeFrom: int
     salaryRangeTo: int
     skills: List[str]
     benefits: List[str]
-    deadline: str #datetime
+    deadline: Optional[datetime] #datetime
 
     tags: List[str]
     company: BaseCompany
@@ -31,9 +31,21 @@ class BaseJob(BaseModel):
         from_attributes=True
         validate_assignment = True
 
-class CreateJobSchema(BaseJob):
-    id: None
-    pass
+class CreateJobSchema(BaseModel):
+    title: str = Field(index=True)
+    description: str
+    type: Optional[JobType]
+    status: JobStatus
+    experienceLevel: Optional[ExperienceLevel]
+    location: str
+    locationType: Optional[LocationType]
+    qualifications: Optional[List[Qualification]]
+    currency: Optional[Currency]
+    salaryRangeFrom: int
+    salaryRangeTo: int
+    skills: List[str]
+    benefits: List[str]
+    deadline: str
 
 
 

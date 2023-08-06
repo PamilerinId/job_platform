@@ -51,7 +51,7 @@ class Job(Base):
     created_at = Column(TIMESTAMP(timezone=True),
                         nullable=False, server_default=text("now()"))
     updated_at = Column(TIMESTAMP(timezone=True),
-                        nullable=False, onupdate=text("now()"))
+                        nullable=False, server_default=text("now()"), onupdate=text("now()"))
     
 
 class Application(Base):

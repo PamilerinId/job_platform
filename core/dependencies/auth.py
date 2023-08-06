@@ -3,13 +3,13 @@ from datetime import datetime, timedelta
 from typing import Annotated
 
 import jwt
-from fastapi import Depends, Request
+from fastapi import Depends, Request, HTTPException
 from fastapi.security import OAuth2PasswordBearer
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
-from services.users.schemas import BaseUser
+from services.users.schemas import BaseCandidate, BaseClient, BaseUser
 from services.auth.schemas import RefreshTokenSchema
-from services.users.models import User
+from services.users.models import User, UserType, Company
 
 from core.env import config
 from core.dependencies.sessions import get_db
@@ -41,9 +41,9 @@ class TokenHelper:
                 config.JWT_SECRET_KEY,
             )
         except jwt.exceptions.DecodeError:
-            raise DecodeTokenException
+            raise DecodeTokenException("Something went wrong decoding your access token")
         except jwt.exceptions.ExpiredSignatureError:
-            raise ExpiredTokenException
+            raise ExpiredTokenException(message="Your token has expired")
 
     @staticmethod
     def decode_expired_token(token: str) -> dict:
@@ -55,7 +55,7 @@ class TokenHelper:
                 options={"verify_exp": False},
             )
         except jwt.exceptions.DecodeError:
-            raise DecodeTokenException
+            raise DecodeTokenException("Token has expired")
         
     async def create_refresh_token(
         self,
@@ -65,7 +65,7 @@ class TokenHelper:
         token = TokenHelper.decode(token=token)
         refresh_token = TokenHelper.decode(token=refresh_token)
         if refresh_token.get("sub") != "refresh":
-            raise DecodeTokenException
+            raise DecodeTokenException("Token has expired")
 
         return RefreshTokenSchema(
             token=TokenHelper.encode(payload={"user_id": token.get("user_id")}),
@@ -78,17 +78,28 @@ async def get_current_user(request: Request, token: Annotated[str, Depends(oauth
     user_decoded_string : str
     # TODO: Refactor token capture, decode and validation into middleware [using oauth bearer doesnt work in middleware]
     # Get decoded token from auth middleware
-    if request.user:
-        user_decoded_string = request.user  
-    else: # Get token from headers
-        user_decoded_string = TokenHelper.decode(token)
+    try:
+        if request.user:
+            user_decoded_string = request.user  
+        else: # Get token from headers
+            user_decoded_string = TokenHelper.decode(token)
+    except:
+        raise HttpException
     user_email: str = user_decoded_string.get("email")
     if user_email is None:
         raise UnauthorizedException(message="Could not validate credentials")
-    user = db.query(User).filter(User.email == user_email).first()
+    user = db.query(User).options(
+            joinedload(User.client_profile)).filter(User.email == user_email).first()
     if user is None:
         raise UserNotFoundException
+    print("##########", user.__dict__, BaseUser.from_orm(user), flush=True)
+    # if user.role == UserType.CLIENT:
+    #     return BaseClient.from_orm(user)
+    # elif user.role == UserType.CANDIDATE:
+    #     return BaseCandidate.from_orm(user)
+
     return BaseUser.from_orm(user)
+
 
 
 # TODO: implement confirmation token def that takes confirmation type as input

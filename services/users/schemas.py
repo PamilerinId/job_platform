@@ -9,12 +9,12 @@ from services.users.models import CompanySize, UserType
 class CompanyProfile(BaseModel):
     id: Optional[UUID] = None
     company_id: Optional[UUID] = None
-    address: str
-    location: str
-    website : Optional[HttpUrl]
-    support_mail: Optional[EmailStr]
-    linkedin_url: Optional[HttpUrl]
-    funding: Optional[str]
+    address: Optional[str]= None
+    location: Optional[str]= None
+    website : Optional[str]= None
+    support_mail: Optional[EmailStr]= None
+    linkedin_url: Optional[str]= None
+    funding: Optional[str] = None
     size: Optional[CompanySize]
 
     class Config:
@@ -26,16 +26,16 @@ class BaseCompany(BaseModel):
     name: str = None
     description: Optional[str] = None
     logo_url: Optional[str] = None
-    profile: Optional[CompanyProfile]
+    profile: Optional[CompanyProfile] = None
 
     class Config:
         from_attributes=True
 
-    # @validator("id", "logo_url")
-    # def validate_uuids(cls, value):
-    #     if value:
-    #         return str(value)
-    #     return value
+    @validator("id", "logo_url")
+    def validate_uuids(cls, value):
+        if value:
+            return str(value)
+        return value
 
 class CreateCompanySchema(BaseModel):
     name: str
@@ -63,13 +63,30 @@ class UpdateCompanySchema(BaseModel):
 
 
 ####################### Users #################
+
+class BaseCandidate(BaseModel):
+    cv: Optional[str]= None
+
+    class Config:
+        from_attributes=True
+        validate_assignment = True
+
+class BaseClient(BaseModel):
+    company: Optional[BaseCompany]= None
+    title: Optional[str] = None
+
+    class Config:
+        from_attributes=True
+        validate_assignment = True
+        
 class BaseUser(BaseModel):
     id: Optional[UUID] = None
     email: EmailStr = Field(None, description="email")
     first_name: str = Field(None, description="First Name")
     last_name: str = Field(None, description="Last Name")
     role: Optional[UserType]=None
-
+    client_profile : Optional[BaseClient] = None
+    candidate_profile: Optional[BaseCandidate] = None
     class Config:
         from_attributes=True
         validate_assignment = True
@@ -94,11 +111,3 @@ class ListUserResponse(BaseModel):
     users: List[BaseUser]
 
 
-class BaseCandidate(BaseModel):
-    user: BaseUser
-    cv: str
-
-class BaseClient(BaseModel):
-    user: BaseUser
-    company: Optional[BaseCompany]
-    title: str 

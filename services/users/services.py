@@ -20,17 +20,17 @@ router = APIRouter(
     prefix="/users",
 )
 
-@router.get("/companies", response_model=CustomListResponse, tags=["Companies"])
+@router.get("/companies", response_model=CustomListResponse[BaseCompany], tags=["Companies"])
 async def fetch_companies(db: Session = Depends(get_db), limit: int = 10, page: int = 1, search: str = ''):#, user_id: str = Depends(require_user)):
     skip = (page - 1) * limit
 
     companies = db.query(Company).options(joinedload(Company.profile)).filter(
         Company.name.contains(search)).limit(limit).offset(skip).all()
     
-    # print('##########################', companies[0].profile,  flush=True)
     if len(companies) < 1: 
         raise NotFoundException('No Companies found')
-    return {'message': 'Company list retrieved successfully', 'count': len(companies), 'data': companies}
+    return {'message': 'Company list retrieved successfully', 'count': len(companies),'data': companies}
+
 
 @router.post('/companies', status_code=status.HTTP_201_CREATED, response_model=CustomResponse[BaseCompany], tags=["Companies"])
 async def create_company(payload: CreateCompanySchema,

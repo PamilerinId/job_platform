@@ -35,7 +35,7 @@ class Company(Base):
     description = Column(Text, nullable=False)
     logo_url = Column(String, nullable=True) # TODO add file upload support for this
     owner_id=Column(String,  nullable=False) 
-    members = relationship("User", back_populates="company")
+    members = relationship("ClientProfile", back_populates="company")
     files_url = Column(ARRAY(String), nullable=True)
     # company verified checks [not a ble to post jobs unless verified]
     verified = Column(Boolean, nullable=False, server_default='False')
@@ -43,6 +43,10 @@ class Company(Base):
     profile = relationship(
             "CompanyProfile",
             back_populates="company", uselist=False)
+    
+    jobs = relationship(
+            "Job",
+            back_populates="company")
 
     # Audit logs
     created_at = Column(TIMESTAMP(timezone=True),
@@ -53,6 +57,7 @@ class Company(Base):
     def __repr__(self):
         return f"<Company {self.name}>"
     
+
 class CompanyProfile(Base):
     __tablename__ = "company_profiles"
     id = Column(UUID(as_uuid=True), primary_key=True, nullable=False,
@@ -74,6 +79,9 @@ class CompanyProfile(Base):
                         nullable=False, server_default=text("now()"))
     updated_at = Column(TIMESTAMP(timezone=True),
                         nullable=False, server_default=text("now()"))
+    
+    def __repr__(self):
+        return f"<Company profile {self.company.name}>"
 
 
 
@@ -89,9 +97,8 @@ class User(Base):
     role = Column(Enum(UserType), server_default = UserType.CANDIDATE, nullable=False)
 
     # candidates by default have no company id
-    # candidate_profile = relationship('CandidateProfile', uselist=False, backref="users")
-    company_id = Column(UUID, ForeignKey("companies.id"))
-    company = relationship('Company')
+    candidate_profile = relationship('CandidateProfile', uselist=False, backref="users", lazy='select')
+    client_profile = relationship('ClientProfile', uselist=False, backref="users", lazy='select')
 
     # user active checks
     email_verified = Column(Boolean, nullable=False, server_default='False')
@@ -105,7 +112,28 @@ class User(Base):
                         nullable=False, server_default=text("now()"), onupdate=text("now()"))
     
     def __repr__(self):
-        return f"<User {self.email}>"
+        return f"<User {self.email}>"  
+
+class ClientProfile(Base):
+    __tablename__ = "client_profiles"
+    id = Column(UUID(as_uuid=True), primary_key=True, nullable=False,
+                default=uuid.uuid4)
+    title = Column(String, nullable=True)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"))
+    user =  relationship('User')
+
+    company_id = Column(UUID(as_uuid=True), ForeignKey("companies.id"))
+    company = relationship('Company')
+
+    # Audit logs
+    created_at = Column(TIMESTAMP(timezone=True),
+                        nullable=False, server_default=text("now()"))
+    updated_at = Column(TIMESTAMP(timezone=True),
+                        nullable=False, server_default=text("now()"), onupdate=text("now()"))
+    
+    def __repr__(self):
+        return f"<Client Profile: {self.user.email}>"
+
 
 class CandidateProfile(Base):
     __tablename__ = "candidate_profiles"
@@ -134,4 +162,6 @@ class CandidateProfile(Base):
                         nullable=False, server_default=text("now()"))
     updated_at = Column(TIMESTAMP(timezone=True),
                         nullable=False, server_default=text("now()"), onupdate=text("now()"))
-
+    
+    def __repr__(self):
+        return f"<Candidate Profile: {self.user.email}>"
