@@ -1,11 +1,12 @@
 from datetime import datetime
 import secrets
 from typing import Annotated, List
+from core.exceptions.base import BadRequestException
 from pydantic import parse_obj_as
-import uuid
+from uuid import UUID
 from slugify import slugify
 
-from fastapi import Depends, HTTPException, status, APIRouter, Response
+from fastapi import Depends, HTTPException, status, APIRouter, Response, Path
 from sqlalchemy.orm import Session, joinedload
 
 from core.dependencies.sessions import get_db
@@ -14,7 +15,7 @@ from core.exceptions import DuplicateCompanyException, UnauthorisedUserException
 from core.helpers.schemas import CustomListResponse, CustomResponse
 
 from .models import Company, CompanyProfile, User, UserType
-from .schemas import BaseUser, BaseCompany, CreateCompanySchema
+from .schemas import BaseUser, BaseCompany, CreateCompanySchema, UpdateCompanySchema
 
 router = APIRouter(
     prefix="/users",
@@ -30,6 +31,20 @@ async def fetch_companies(db: Session = Depends(get_db), limit: int = 10, page: 
     if len(companies) < 1: 
         raise NotFoundException('No Companies found')
     return {'message': 'Company list retrieved successfully', 'count': len(companies),'data': companies}
+
+
+@router.get("/companies/{company_id}", response_model=CustomResponse[BaseCompany], tags=["Companies"])
+async def fetch_companies(
+    company_id: Annotated[UUID, Path(title="The ID of the company to be retrieved")],
+    db: Session = Depends(get_db)):#, user_id: str = Depends(require_user)):
+
+    company = db.query(Company).options(joinedload(Company.profile)).filter(
+        Company.id == company_id).first()
+    
+    if company is None:
+        raise NotFoundException("Company not found!")
+    
+    return {'message': 'Company profile retrieved successfully', 'data': company}
 
 
 @router.post('/companies', status_code=status.HTTP_201_CREATED, response_model=CustomResponse[BaseCompany], tags=["Companies"])
@@ -70,10 +85,37 @@ async def create_company(payload: CreateCompanySchema,
     return {'message': 'Company created successfully', 'data': BaseCompany.from_orm(new_company)}   
 
 @router.patch('/companies', response_model=CustomResponse[BaseCompany], tags=["Companies"])
-async def update_company_profile():
-    pass
+async def update_company_profile(company_id: Annotated[UUID, Path(title="The ID of the company to be deleted")],
+                                 payload: UpdateCompanySchema,
+               current_user: Annotated[BaseUser, Depends(get_current_user)],
+               db: Session = Depends(get_db),):
+    company_query = db.query(Company).filter(Company.id == company_id)
+    company = company_query.first()
+    if company is None:
+        raise NotFoundException("Job not found!")
+    
+    company_query.update(payload.dict(exclude_unset=True), synchronize_session=False)
+    db.commit()
+    
+    return {"message":"Job updated successfully","data": company}
 
+# Admin Use
+@router.delete('/{company_id}', response_model=CustomResponse, tags=["Companies"])
+async def delete_job(company_id: Annotated[UUID, Path(title="The ID of the company to be deleted")],
+               current_user: Annotated[BaseUser, Depends(get_current_user)],
+               db: Session = Depends(get_db),):
+    
+    company = db.query(Company).filter(Company.id == company_id).first()
 
+    if company is None:
+        raise NotFoundException("Company not found!")
+    try:
+        db.delete(company)
+        db.commit()
+        return {"message": "Company profile deleted"}
+    except BadRequestException:
+        db.rollback()
+        raise BadRequestException("Company delete failed")
 
 @router.get('/clients', response_model=BaseUser, tags=["User"])
 def fetch_clients(db: Session = Depends(get_db)):#, user_id: str = Depends(require_user)):

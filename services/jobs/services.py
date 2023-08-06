@@ -100,7 +100,7 @@ def update_job(job_id: Annotated[UUID, Path(title="The ID of the job to be updat
     
     return {"message":"Job updated successfully","data": job}
 
-
+# Admin Use
 @router.delete('/{job_id}', response_model=CustomResponse, tags=["Jobs"])
 async def delete_job(job_id: Annotated[UUID, Path(title="The ID of the job to be deleted")],
                current_user: Annotated[BaseUser, Depends(get_current_user)],
