@@ -116,7 +116,7 @@ async def get_current_user_object(request: Request, token: Annotated[str, Depend
         else: # Get token from headers
             user_decoded_string = TokenHelper.decode(token)
     except:
-        raise DecodeTokenException("Something went wrong decoding your access token")
+        raise UnauthorizedException(message="Could not validate credentials")
     user_email: str = user_decoded_string.get("email")
     if user_email is None:
         raise UnauthorizedException(message="Could not validate credentials")

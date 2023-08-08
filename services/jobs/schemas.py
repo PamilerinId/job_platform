@@ -1,7 +1,7 @@
 from uuid import UUID
 from datetime import datetime
 from typing import Any, List, Optional
-from pydantic import BaseModel, Field, constr
+from pydantic import ConfigDict, BaseModel, Field, constr
 
 
 from services.jobs.enums import *
@@ -11,36 +11,33 @@ class BaseJob(BaseModel):
     id: Optional[UUID] = None
     title: str = Field(index=True)
     description: str
-    type: Optional[JobType]
+    type: Optional[JobType] = None
     status: JobStatus
-    experienceLevel: Optional[ExperienceLevel]
+    experienceLevel: Optional[ExperienceLevel] = None
     location: str
-    locationType: Optional[LocationType]
-    qualifications: Optional[List[Qualification]]
-    currency: Optional[Currency]
+    locationType: Optional[LocationType] = None
+    qualifications: Optional[List[Qualification]] = None
+    currency: Optional[Currency] = None
     salaryRangeFrom: int
     salaryRangeTo: int
     skills: List[str]
     benefits: List[str]
-    deadline: Optional[datetime] #datetime
+    deadline: Optional[datetime] = None #datetime
 
     tags: List[str]
     company: BaseCompany
-
-    class Config:
-        from_attributes=True
-        validate_assignment = True
+    model_config = ConfigDict(from_attributes=True, validate_assignment=True)
 
 class CreateJobSchema(BaseModel):
     title: str = Field(index=True)
     description: str
-    type: Optional[JobType]
+    type: Optional[JobType] = None
     status: JobStatus
-    experienceLevel: Optional[ExperienceLevel]
+    experienceLevel: Optional[ExperienceLevel] = None
     location: str
-    locationType: Optional[LocationType]
-    qualifications: Optional[List[Qualification]]
-    currency: Optional[Currency]
+    locationType: Optional[LocationType] = None
+    qualifications: Optional[List[Qualification]] = None
+    currency: Optional[Currency] = None
     salaryRangeFrom: int
     salaryRangeTo: int
     skills: List[str]
@@ -62,9 +59,7 @@ class UpdateJobSchema(BaseModel):
     salaryRangeTo: Optional[int]= None
     skills: Optional[List[str]]= None
     benefits: Optional[List[str]]= None
-
-    class Config:
-        from_attributes=True
+    model_config = ConfigDict(from_attributes=True)
 
 
 
@@ -74,11 +69,8 @@ class BaseApplication(BaseModel):
     status: ApplicationStatus
     job: BaseJob
     applicant: BaseCandidate
-    comment: Optional[str]
-
-    class Config:
-        from_attributes=True
-        validate_assignment = True
+    comment: Optional[str] = None
+    model_config = ConfigDict(from_attributes=True, validate_assignment=True)
 
 
 class UpdateApplication(BaseModel):
@@ -86,7 +78,4 @@ class UpdateApplication(BaseModel):
     job_id: Optional[UUID] = None
     applicant_id: Optional[UUID] = None
     comment: Optional[str] = None
-
-    class Config:
-        from_attributes=True
-        validate_assignment = True
+    model_config = ConfigDict(from_attributes=True, validate_assignment=True)

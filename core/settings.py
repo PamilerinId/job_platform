@@ -1,14 +1,13 @@
 from enum import Enum
 from typing_extensions  import Annotated
 from typing import List
-
-
+from starlette.exceptions import HTTPException
+from fastapi.exceptions import RequestValidationError
 from fastapi import FastAPI, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 # import sentry_sdk
-
 
 from core.router import router
 from core.env import config
@@ -21,6 +20,8 @@ from core.middlewares import (
     ResponseLogMiddleware,
 )
 # from core.helpers.cache import Cache, RedisBackend, CustomKeyMaker
+from core.exceptions.handler import http_exception_handler, request_validation_exception_handler, unhandled_exception_handler
+from core.middlewares.response_log import log_request_middleware
 
 
 def init_db(app_: FastAPI) -> None:
@@ -71,8 +72,12 @@ def init_middleware(app_: FastAPI) -> None:
     )
     # Middleware(SQLAlchemyMiddleware),
     app_.add_middleware(ResponseLogMiddleware)
+    app_.middleware("http")(log_request_middleware)
 
-
+def init_exception_handlers(app_: FastAPI) -> None:
+    app_.add_exception_handler(RequestValidationError, request_validation_exception_handler)
+    app_.add_exception_handler(HTTPException, http_exception_handler)
+    app_.add_exception_handler(Exception, unhandled_exception_handler)
 # def init_cache() -> None:
 #     Cache.init(backend=RedisBackend(), key_maker=CustomKeyMaker())
 
@@ -99,6 +104,7 @@ def create_app() -> FastAPI:
     init_routers(app_=app_)
     init_listeners(app_=app_)
     init_middleware(app_=app_)
+    init_exception_handlers(app_=app_)
     # init_cache()
     return app_
 

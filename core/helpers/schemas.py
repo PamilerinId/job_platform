@@ -9,21 +9,21 @@ DataT = TypeVar('DataT')
 class CustomResponse(BaseModel, Generic[DataT]):
     status: Optional[str] = 'success'
     code: Optional[str] = "200"
-    message: Optional[str]
+    message: Optional[str] = None
     data: Optional[DataT] = None
 
 class CustomListResponse(BaseModel, Generic[DataT]):
     status: Optional[str] = 'success'
     code: Optional[str] = "200"
-    message: Optional[str]
-    count: Optional[int]
+    message: Optional[str] = None
+    count: Optional[int] = None
     data: Optional[List[DataT]] = None
 
 # Mailing Schemas
 class EmailParameters(BaseModel, Generic[DataT]):
     recipient_mail : str
     subject   : str
-    template_id: Optional[int]
+    template_id: Optional[int] = None
     template_values: Optional[DataT] = None
 
 

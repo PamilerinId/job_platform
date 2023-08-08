@@ -3,8 +3,10 @@ from fastapi import HTTPException
 
 class CustomException(Exception):
     code = HTTPStatus.BAD_GATEWAY
+    status_code = code
     error_code = HTTPStatus.BAD_GATEWAY
     message = HTTPStatus.BAD_GATEWAY.description
+    detail = message
 
     def __init__(self, message=None, ):
         if message:

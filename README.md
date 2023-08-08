@@ -221,6 +221,8 @@ await Cache.remove_by_tag(tag=CacheTag.GET_USER_LIST)
 ### Migration
 
 
+### Testig
+pytest tests/{file}.py -v -s
 
 ### TODO:
 - Make db a global dependency rather than per route

@@ -1,14 +1,15 @@
-from pydantic import BaseModel, Field, EmailStr, constr
+from pydantic import constr, BaseModel, Field, EmailStr
 from services.users.schemas import CreateUser
+from typing_extensions import Annotated
 
 
 class RegisterUserSchema(CreateUser):
-    password: constr(min_length=8)
+    password: Annotated[str, constr(min_length=8)]
 
 
 class LoginUserSchema(BaseModel):
     email: EmailStr
-    password: constr(min_length=8)
+    password: Annotated[str, constr(min_length=8)]
 
 class RefreshTokenSchema(BaseModel):
     token: str = Field(..., description="Token")
@@ -18,5 +19,5 @@ class PasswordResetRequestSchema(BaseModel):
     email: EmailStr
     
 class PasswordChangeSchema(BaseModel):
-    password: constr(min_length=8)
+    password: Annotated[str, constr(min_length=8)]
 
