@@ -4,7 +4,7 @@ from typing import Any, List, Optional
 from pydantic import field_validator, ConfigDict, BaseModel, Field, EmailStr, constr, HttpUrl
 
 
-from services.users.models import CompanySize, UserType
+from modules.users.models import CompanySize, UserType
 
 class CompanyProfile(BaseModel):
     id: Optional[UUID] = None

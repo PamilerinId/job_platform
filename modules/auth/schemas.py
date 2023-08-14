@@ -1,5 +1,5 @@
 from pydantic import constr, BaseModel, Field, EmailStr
-from services.users.schemas import CreateUser
+from modules.users.schemas import CreateUser
 from typing_extensions import Annotated
 
 

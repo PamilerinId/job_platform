@@ -7,9 +7,9 @@ from fastapi import Depends, Request, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session, joinedload
 
-from services.users.schemas import BaseCandidate, BaseClient, BaseUser
-from services.auth.schemas import RefreshTokenSchema
-from services.users.models import User, UserType, Company
+from modules.users.schemas import BaseCandidate, BaseClient, BaseUser
+from modules.auth.schemas import RefreshTokenSchema
+from modules.users.models import User, UserType, Company
 
 from core.env import config
 from core.dependencies.sessions import get_db

@@ -4,8 +4,8 @@ from typing import Any, List, Optional
 from pydantic import ConfigDict, BaseModel, Field, constr
 
 
-from services.jobs.enums import *
-from services.users.schemas import BaseCompany, BaseCandidate
+from modules.jobs.enums import *
+from modules.users.schemas import BaseCompany, BaseCandidate
 
 class BaseJob(BaseModel):
     id: Optional[UUID] = None

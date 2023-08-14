@@ -14,9 +14,9 @@ from core.helpers.schemas import CustomResponse
 from core.env import config
 from core.exceptions import *
 
-from services.auth.schemas import LoginUserSchema, PasswordChangeSchema, PasswordResetRequestSchema, RegisterUserSchema
-from services.users.models import Company, User
-from services.users.schemas import *
+from modules.auth.schemas import LoginUserSchema, PasswordChangeSchema, PasswordResetRequestSchema, RegisterUserSchema
+from modules.users.models import Company, User
+from modules.users.schemas import *
 
 router = APIRouter(
     prefix="/auth", tags=["Auth"]

@@ -9,7 +9,7 @@ from starlette.middleware.authentication import (
 from starlette.requests import HTTPConnection
 
 from core.env import config
-from services.users.schemas import BaseUser
+from modules.users.schemas import BaseUser
 
 '''
 TODO: Check for permissions here and call from dependencies

@@ -1,8 +1,8 @@
 from typing import Annotated
 from core.exceptions.base import BadRequestException, DuplicateValueException, ForbiddenException, NotFoundException
 from fastapi import Depends, HTTPException, status, APIRouter, Response, Path
-from services.users.models import UserType
-from services.users.schemas import BaseClient, BaseUser
+from modules.users.models import UserType
+from modules.users.schemas import BaseClient, BaseUser
 from sqlalchemy import or_
 from sqlalchemy.orm import Session, joinedload
 
@@ -11,7 +11,7 @@ from core.dependencies.auth import get_current_user
 from core.helpers.schemas import CustomResponse, CustomListResponse
 from core.helpers.text_utils import to_slug
 
-from services.users.models import Company, CompanyProfile
+from modules.users.models import Company, CompanyProfile
 
 from .models import Job, Application
 from .schemas import *
