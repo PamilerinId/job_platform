@@ -70,15 +70,15 @@ async def create_upload_file(file: UploadFile, type: FileType,
     file_name = f'{uuid4()}.{SUPPORTED_FILE_TYPES[file_type]}'
 
     # upload to s3
-    uploaded_file_url = await upload_files(contents, file_name)
-
-    print(uploaded_file_url, flush=True)
+    uploaded_file_url = await upload_files(contents, file_name, type)
 
     # commit details to db
     new_file = File(**{'owner_id': current_user.id, 'name': file_name, 'type': type, 'url': uploaded_file_url })
     db.add(new_file)
     db.commit()
     db.refresh(new_file)
+
+    # update user profile
 
     return {'message': 'File uploaded successfully',
             'data': {"filename": new_file.name, "fileUrl": new_file.url}}
