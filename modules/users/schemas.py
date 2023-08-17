@@ -62,6 +62,7 @@ class BaseCandidate(BaseModel):
     industry_role: Optional[str] = None
     industries: Optional[List[str]] = None
     skills: Optional[List[str]] = None
+    currency: Optional[str] = None
     current_earnings: Optional[str] = None
     desired_earnings: Optional[str] = None
     model_config = ConfigDict(from_attributes=True, validate_assignment=True)

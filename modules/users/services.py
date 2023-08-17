@@ -108,7 +108,7 @@ async def update_company_profile(company_id: Annotated[UUID, Path(title="The ID 
 
 
 @router.patch('/profile', response_model=CustomResponse[BaseUser], tags=["Users"])
-async def update_company_profile(payload: UpdateUserProfile,
+async def update_user_profile(payload: UpdateUserProfile,
                current_user: Annotated[BaseUser, Depends(get_current_user)],
                db: Session = Depends(get_db),):
     

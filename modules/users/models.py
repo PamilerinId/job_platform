@@ -152,6 +152,7 @@ class CandidateProfile(Base):
     skills =  Column(ARRAY(String), nullable=False, default=cast(array([], type_=String), ARRAY(String)))
     __table_args__ = (Index('ix_candidate_skills', industries, postgresql_using="gin"), )
 
+    currency = Column(String, nullable=True)
     current_earnings = Column(String, nullable=True)
     desired_earnings = Column(String, nullable=True)
 
