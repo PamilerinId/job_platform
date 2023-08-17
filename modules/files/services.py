@@ -82,8 +82,8 @@ async def create_upload_file(file: UploadFile, type: FileType,
 
     if type == FileType.PROFILE_PHOTO:
         user_query.update({'photo': uploaded_file_url}, synchronize_session=False)
-    elif type == FileType.RESUME:
-        user_query.update({'candidate_profile': {'cv':uploaded_file_url}}, synchronize_session=False)
+    # elif type == FileType.RESUME:
+    #     user_query.update({'candidate_profile': {'cv':uploaded_file_url}}, synchronize_session=False)
 
 
     db.commit()
