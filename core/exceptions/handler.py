@@ -47,7 +47,7 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
     url = f"{request.url.path}?{request.query_params}" if request.query_params else request.url.path
     exception_type, exception_value, exception_traceback = sys.exc_info()
     exception_name = getattr(exception_type, "__name__", None)
-    print(exception_type, flush=True)
+    print(exception_name, flush=True)
     logger.error(
         f'{host}:{port} - "{request.method} {url}" {exc.code} {exc.message} <{exception_name}: {exc.error_code}>'
     )

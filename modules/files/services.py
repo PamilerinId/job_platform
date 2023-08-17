@@ -15,7 +15,7 @@ from core.exceptions import NotFoundException, BadRequestException
 from core.helpers.schemas import CustomListResponse, CustomResponse
 from core.helpers.s3client import upload_files
 
-from .models import File
+from .models import File, FileType
 
 router = APIRouter(
     prefix="/files",
@@ -48,7 +48,7 @@ async def fetch_my_files(db: Session = Depends(get_db), limit: int = 10, page: i
 
 
 @router.post("/upload", response_model=CustomResponse, tags=["Files"])
-async def create_upload_file(file: UploadFile, 
+async def create_upload_file(file: UploadFile, type: FileType,
                     current_user: Annotated[BaseUser, Depends(get_current_user)],
                    db: Session = Depends(get_db)):
     if not file:
@@ -75,11 +75,11 @@ async def create_upload_file(file: UploadFile,
     print(uploaded_file_url, flush=True)
 
     # commit details to db
-    # new_file = File({'owner_id': current_user.id, })
-    # db.add(new_file)
-    # db.commit()
-    # db.refresh(new_file)
+    new_file = File(**{'owner_id': current_user.id, 'name': file_name, 'type': type, 'url': uploaded_file_url })
+    db.add(new_file)
+    db.commit()
+    db.refresh(new_file)
 
     return {'message': 'File uploaded successfully',
-            'data': {"filename": 'new_file.name', "fileUrl": 'new_file.url'}}
+            'data': {"filename": new_file.name, "fileUrl": new_file.url}}
 # Admin Routes

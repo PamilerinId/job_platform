@@ -10,6 +10,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from core.dependencies.sessions import Base
 
 class FileType(str, enum.Enum):
+    PROFILE_PHOTO = 'PROFILE_PHOTO'
     RESUME = 'RESUME'
     COVER_LETTER = 'COVER_LETTER'
     VIDEO = 'VIDEO'
