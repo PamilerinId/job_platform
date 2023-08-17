@@ -15,7 +15,7 @@ from core.exceptions import DuplicateCompanyException, UnauthorisedUserException
 from core.helpers.schemas import CustomListResponse, CustomResponse
 
 from .models import Company, CompanyProfile, User, UserType
-from .schemas import BaseUser, BaseCompany, CreateCompanySchema, UpdateCompanySchema
+from .schemas import BaseUser, BaseCompany, CreateCompanySchema, UpdateCompanySchema, UpdateUserProfile
 
 router = APIRouter(
     prefix="/users",
@@ -85,25 +85,57 @@ async def create_company(payload: CreateCompanySchema,
     return {'message': 'Company created successfully', 'data': BaseCompany.from_orm(new_company)}   
 
 @router.patch('/companies', response_model=CustomResponse[BaseCompany], tags=["Companies"])
-async def update_company_profile(company_id: Annotated[UUID, Path(title="The ID of the company to be deleted")],
+async def update_company_profile(company_id: Annotated[UUID, Path(title="The ID of the company to be updated")],
                                  payload: UpdateCompanySchema,
                current_user: Annotated[BaseUser, Depends(get_current_user)],
                db: Session = Depends(get_db),):
+    
+    if current_user.role == UserType.CANDIDATE:
+        raise UnauthorisedUserException("User is not authorised to edit company details")
+    
+    if current_user.client_profile.company.id != company_id:
+        raise UnauthorisedUserException("User is not authorised to edit company details")
+    
     company_query = db.query(Company).filter(Company.id == company_id)
     company = company_query.first()
     if company is None:
-        raise NotFoundException("Job not found!")
+        raise NotFoundException("Company not found!")
     
     company_query.update(payload.dict(exclude_unset=True), synchronize_session=False)
     db.commit()
     
-    return {"message":"Job updated successfully","data": company}
+    return {"message":"Company profile updated successfully","data": company}
+
+
+@router.patch('/profile', response_model=CustomResponse[BaseUser], tags=["Users"])
+async def update_company_profile(payload: UpdateUserProfile,
+               current_user: Annotated[BaseUser, Depends(get_current_user)],
+               db: Session = Depends(get_db),):
+    
+    user_query = db.query(User)
+
+    if current_user.role == UserType.CANDIDATE:
+        user = user_query.options(joinedload(User.candidate_profile)).filter(User.id == current_user.id).first()
+    elif current_user.role == UserType.CLIENT:
+        user = user_query.options(joinedload(User.client_profile)).filter(User.id == current_user.id).first()
+    
+    if user is None:
+        raise NotFoundException("User not found!")
+    
+    user_query.update(payload.dict(exclude_unset=True), synchronize_session=False)
+    db.commit()
+    db.refresh(user)
+    
+    return {"message":"User profile updated successfully","data": user}
 
 # Admin Use
 @router.delete('/{company_id}', response_model=CustomResponse, tags=["Companies"])
 async def delete_job(company_id: Annotated[UUID, Path(title="The ID of the company to be deleted")],
                current_user: Annotated[BaseUser, Depends(get_current_user)],
                db: Session = Depends(get_db),):
+    
+    if current_user.role != UserType.ADMIN:
+        raise UnauthorisedUserException("User is not authorised to access this view")
     
     company = db.query(Company).filter(Company.id == company_id).first()
 
@@ -117,18 +149,18 @@ async def delete_job(company_id: Annotated[UUID, Path(title="The ID of the compa
         db.rollback()
         raise BadRequestException("Company delete failed")
 
-@router.get('/clients', response_model=BaseUser, tags=["User"])
+
+# ADMIN Routes
+@router.get('/clients', response_model=CustomListResponse[BaseUser], tags=["User"])
 def fetch_clients(db: Session = Depends(get_db)):#, user_id: str = Depends(require_user)):
-    user = db.query(User).filter(User.id == 1).first()
-    return user
+    users = db.query(User).filter(User.role == UserType.CLIENT).all()
+    return {'message': 'Client list retrieved successfully', 'count': len(users),'data': users}
 
 @router.get('/candidates', response_model=BaseUser, tags=["User"])
 def fetch_candidates(db: Session = Depends(get_db)):#, user_id: str = Depends(require_user)):
-    user = db.query(User).filter(User.id == 1).first()
-    return user
+    users = db.query(User).filter(User.role == UserType.CANDIDATE).all()
+    return {'message': 'Candidate list retrieved successfully', 'count': len(users),'data': users}
 
 # TODO: 
-# CRUD Companies
-# - Companies profile
 # CRUD Users
 # - Candidates profile

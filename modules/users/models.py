@@ -37,7 +37,7 @@ class Company(Base):
     owner_id=Column(String,  nullable=False) 
     members = relationship("ClientProfile", back_populates="company")
     files_url = Column(ARRAY(String), nullable=True)
-    # company verified checks [not a ble to post jobs unless verified]
+    # company verified checks [not able to post jobs unless verified]
     verified = Column(Boolean, nullable=False, server_default='False')
 
     profile = relationship(

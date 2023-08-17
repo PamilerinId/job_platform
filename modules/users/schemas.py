@@ -57,7 +57,13 @@ class UpdateCompanySchema(BaseModel):
 ####################### Users #################
 
 class BaseCandidate(BaseModel):
-    cv: Optional[str]= None
+    cv: Optional[str] = None
+    phone: Optional[str] = None
+    industry_role: Optional[str] = None
+    industries: Optional[List[str]] = None
+    skills: Optional[List[str]] = None
+    current_earnings: Optional[str] = None
+    desired_earnings: Optional[str] = None
     model_config = ConfigDict(from_attributes=True, validate_assignment=True)
 
 class BaseClient(BaseModel):
@@ -74,11 +80,20 @@ class BaseUser(BaseModel):
     candidate_profile: Optional[BaseCandidate] = None
     model_config = ConfigDict(from_attributes=True, validate_assignment=True)
 
+
+class UpdateUserProfile(BaseModel):
+    first_name: str = Field(None, description="First Name")
+    last_name: str = Field(None, description="Last Name")
+    client_profile : Optional[BaseClient] = None
+    candidate_profile: Optional[BaseCandidate] = None
+    model_config = ConfigDict(from_attributes=True, validate_assignment=True)
+
 class CreateUser(BaseModel):
     email: EmailStr = Field(None, description="email")
     first_name: str = Field(None, description="First Name")
     last_name: str = Field(None, description="Last Name")
     model_config = ConfigDict(from_attributes=True, validate_assignment=True)
+    
 
 class AuthUser(BaseUser):
     token_type: str = "bearer"

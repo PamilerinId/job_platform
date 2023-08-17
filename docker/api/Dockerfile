@@ -1,5 +1,8 @@
 FROM python:3.11-slim-bookworm
 
+
+RUN apt-get -y update && apt-get -y install libmagic1
+
 WORKDIR /app
 
 COPY ./requirements.txt /app/requirements.txt

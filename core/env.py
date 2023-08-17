@@ -26,6 +26,14 @@ class Config(BaseSettings):
     ACCESS_TOKEN_EXPIRES_IN: int | None = os.environ.get("ACCESS_TOKEN_EXPIRES_IN", 15)
     SENTRY_DSN: str | None = os.environ.get("SENTRY_DSN")
     POSTMARK_API_KEY: str | None = os.environ.get("POSTMARK_SERVER_TOKEN")
+    AWS_ACCESS_KEY_ID: str | None = os.environ.get("AWS_ACCESS_KEY_ID")
+    AWS_SECRET_ACCESS_KEY: str | None = os.environ.get("AWS_SECRET_ACCESS_KEY")
+    AWS_S3_BUCKET: str | None = os.environ.get("AWS_S3_BUCKET")
+    AWS_S3_REGION: str | None = os.environ.get("AWS_S3_REGION")
+    AWS_S3_FOLDER_BASE: str | None = os.environ.get("AWS_S3_FOLDER_BASE")
+    AWS_S3_FOLDER_PHOTOS: str | None = os.environ.get("AWS_S3_FOLDER_PHOTOS")
+    AWS_S3_FOLDER_CVS: str | None = os.environ.get("AWS_S3_FOLDER_CVS")
+    AWS_S3_FOLDER_PROCTOR: str | None = os.environ.get("AWS_S3_FOLDER_PROCTOR")
     # CELERY_BROKER_URL: str = "amqp://user:bitnami@localhost:5672/"
     # CELERY_BACKEND_URL: str = "redis://:password123@localhost:6379/0"
     # REDIS_HOST: str = "localhost"
