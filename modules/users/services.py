@@ -34,7 +34,7 @@ async def fetch_companies(db: Session = Depends(get_db), limit: int = 10, page: 
 
 
 @router.get("/companies/{company_id}", response_model=CustomResponse[BaseCompany], tags=["Companies"])
-async def fetch_companies(
+async def fetch_company(
     company_id: Annotated[UUID, Path(title="The ID of the company to be retrieved")],
     db: Session = Depends(get_db)):#, user_id: str = Depends(require_user)):
 
@@ -122,7 +122,7 @@ async def update_user_profile(payload: UpdateUserProfile,
     if user is None:
         raise NotFoundException("User not found!")
     
-    user_query.update(payload.dict(exclude_unset=True), synchronize_session=False)
+    user.update(payload.dict(exclude_unset=True), synchronize_session=False)
     db.commit()
     db.refresh(user)
     

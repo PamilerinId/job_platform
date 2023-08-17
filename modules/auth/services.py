@@ -196,7 +196,7 @@ async def confirm_email():
             
             response_model=CustomResponse[BaseUser], 
             response_model_exclude_none=True)
-def get_current_user(current_user: Annotated[BaseUser, Depends(get_current_user)]):
+def get_current_user(current_user: Annotated[BaseUser, Depends(get_current_user)], db: Session = Depends(get_db)):
     # validate user and fetch profile 
     data =  { 
         **jsonable_encoder(BaseUser.from_orm(current_user))

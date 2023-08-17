@@ -6,6 +6,7 @@ from slugify import slugify
 import magic
 
 from fastapi import Depends, status, APIRouter, File, UploadFile
+from modules.users.models import User
 from modules.users.schemas import BaseUser
 from sqlalchemy.orm import Session, joinedload
 
@@ -75,10 +76,18 @@ async def create_upload_file(file: UploadFile, type: FileType,
     # commit details to db
     new_file = File(**{'owner_id': current_user.id, 'name': file_name, 'type': type, 'url': uploaded_file_url })
     db.add(new_file)
-    db.commit()
-    db.refresh(new_file)
 
     # update user profile
+    user_query = db.query(User).options(joinedload(User.candidate_profile)).filter(User.id == current_user.id)
+
+    if type == FileType.PROFILE_PHOTO:
+        user_query.update({'photo': uploaded_file_url}, synchronize_session=False)
+    elif type == FileType.RESUME:
+        user_query.update({'candidate_profile': {'cv':uploaded_file_url}}, synchronize_session=False)
+
+
+    db.commit()
+    db.refresh(new_file)
 
     return {'message': 'File uploaded successfully',
             'data': {"filename": new_file.name, "fileUrl": new_file.url}}
