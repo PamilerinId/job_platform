@@ -57,7 +57,7 @@ class UpdateCompanySchema(BaseModel):
 ####################### Users #################
 
 class BaseCandidate(BaseModel):
-    cv: Optional[str] = None
+    cv: Optional[List] = None
     phone: Optional[str] = None
     industry_role: Optional[str] = None
     industries: Optional[List[str]] = None
