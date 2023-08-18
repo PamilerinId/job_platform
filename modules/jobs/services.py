@@ -1,3 +1,4 @@
+from datetime import timedelta, datetime
 from typing import Annotated
 from core.exceptions.base import BadRequestException, DuplicateValueException, ForbiddenException, NotFoundException
 from fastapi import Depends, HTTPException, status, APIRouter, Response, Path
@@ -79,6 +80,7 @@ def create_job(payload: CreateJobSchema,
     new_job.tags = [title_slug, to_slug(payload.type), to_slug(payload.title), to_slug(payload.title)]
     new_job.company_id = current_user.client_profile.company.id
     new_job.updated_at = datetime.now()
+    new_job.deadline = datetime.now() + timedelta(days=10)
     db.add(new_job)
     db.commit()
     db.refresh(new_job)

@@ -42,7 +42,7 @@ class CreateJobSchema(BaseModel):
     salaryRangeTo: int
     skills: List[str]
     benefits: List[str]
-    deadline: str
+    # deadline: str
 
 
 class UpdateJobSchema(BaseModel):
