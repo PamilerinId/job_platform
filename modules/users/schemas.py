@@ -76,6 +76,7 @@ class BaseUser(BaseModel):
     email: EmailStr = Field(None, description="email")
     first_name: str = Field(None, description="First Name")
     last_name: str = Field(None, description="Last Name")
+    photo: Optional[str] = Field(None, description="Photo")
     role: Optional[UserType]=None
     client_profile : Optional[BaseClient] = None
     candidate_profile: Optional[BaseCandidate] = None
@@ -85,6 +86,7 @@ class BaseUser(BaseModel):
 class UpdateUserProfile(BaseModel):
     first_name: str = Field(None, description="First Name")
     last_name: str = Field(None, description="Last Name")
+    photo: Optional[str] = Field(None, description="Photo")
     client_profile : Optional[BaseClient] = None
     candidate_profile: Optional[BaseCandidate] = None
     model_config = ConfigDict(from_attributes=True, validate_assignment=True)
