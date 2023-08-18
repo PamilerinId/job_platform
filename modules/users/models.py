@@ -153,8 +153,8 @@ class CandidateProfile(Base):
     __table_args__ = (Index('ix_candidate_skills', industries, postgresql_using="gin"), )
 
     currency = Column(String, nullable=True)
-    current_earnings = Column(String, nullable=True)
-    desired_earnings = Column(String, nullable=True)
+    current_earnings = Column(Integer(), nullable=True)
+    desired_earnings = Column(Integer(), nullable=True)
 
     user =  relationship('User')
 
