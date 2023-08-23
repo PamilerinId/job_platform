@@ -69,6 +69,8 @@ def create_job(payload: CreateJobSchema,
     
     #TODO: Refactor to utils
     # TODO: update tags with field slugs
+    if current_user.role == UserType.CANDIDATE:
+        raise ForbiddenException("User not authorised to create jobs")
     title_slug = to_slug(payload.title)
     job = db.query(Job).filter(Job.company_id == current_user.client_profile.company.id ,Job.slug == title_slug).first()
     if job:
