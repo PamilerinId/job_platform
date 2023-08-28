@@ -122,33 +122,31 @@ async def update_user_profile(payload: Optional[UpdateUserProfile],
     
     if current_user.role == UserType.CANDIDATE:
         user = user_query.options(joinedload(User.candidate_profile)).filter(User.id == current_user.id).first()
-
-        if payload.candidate_profile != None:
-            candidate_query = db.query(CandidateProfile).filter(CandidateProfile.user_id == current_user.id)
-            candidate = candidate_query.first()
-            
-            if candidate is None:
+        candidate_query = db.query(CandidateProfile).filter(CandidateProfile.user_id == current_user.id)
+        candidate = candidate_query.first()
+        
+        if candidate is None:
+            if payload.candidate_profile != None:
                 new_profile = CandidateProfile(**payload.candidate_profile.dict())
-                new_profile.user_id = current_user.id
-                new_profile.updated_at = datetime.now()
-                db.add(new_profile)
-                db.commit()
-            candidate_query.update(payload.candidate_profile.dict(exclude_unset=True))
+            new_profile.user_id = current_user.id
+            new_profile.updated_at = datetime.now()
+            db.add(new_profile)
+            db.commit()
+        candidate_query.update(payload.candidate_profile.dict(exclude_unset=True))
 
     elif current_user.role == UserType.CLIENT:
         user = user_query.options(joinedload(User.client_profile)).filter(User.id == current_user.id).first()
+        client_query = db.query(ClientProfile).filter(ClientProfile.user_id == current_user.id)
+        client = client_query.first()
 
-        if payload.client_profile != None:
-            client_query = db.query(ClientProfile).filter(ClientProfile.user_id == current_user.id)
-            client = client_query.first()
-
-            if client is None:
+        if client is None:
+            if payload.client_profile != None:
                 new_profile = ClientProfile(**payload.client_profile.dict())
-                new_profile.user_id = current_user.id
-                new_profile.updated_at = datetime.now()
-                db.add(new_profile)
-                db.commit()
-            client_query.update(payload.client_profile.dict(exclude_unset=True))
+            new_profile.user_id = current_user.id
+            new_profile.updated_at = datetime.now()
+            db.add(new_profile)
+            db.commit()
+        client_query.update(payload.client_profile.dict(exclude_unset=True))
 
     
     if user is None:
