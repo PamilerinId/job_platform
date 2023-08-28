@@ -23,13 +23,14 @@ s3Client = session.client('s3', config=Config(signature_version='s3v4'))
 
 async def generate_presigned_url(key: str):
     try:
-        url = s3Client.generate_presigned_url(
-            ClientMethod='get_object',
-            Params={
-                'Bucket': config.AWS_S3_BUCKET,
-                'Key': key
-            }
-        )
+        # url = s3Client.generate_presigned_url(
+        #     ClientMethod='get_object',
+        #     Params={
+        #         'Bucket': config.AWS_S3_BUCKET,
+        #         'Key': key
+        #     }
+        # )
+        url = f"https://{config.AWS_S3_BUCKET}.s3.{config.AWS_S3_REGION}.amazonaws.com/{key}"
         return url
     except Exception as err:
         raise BadRequestException(f'Error generating public url: {err}')
@@ -44,7 +45,7 @@ async def upload_files(contents: bytes, key: str, type: FileType):
             folder = config.AWS_S3_FOLDER_PROCTOR
 
         file_name = folder + '/' + key
-        s3Client.put_object(Bucket=config.AWS_S3_BUCKET, Key=file_name, Body=contents)
+        s3Client.put_object(Bucket=config.AWS_S3_BUCKET, Key=file_name, Body=contents, ACL='public-read')
         return await generate_presigned_url(file_name)
     except Exception as err:
         raise BadRequestException(f'Error uploading file: {err}')
