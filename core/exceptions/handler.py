@@ -20,9 +20,9 @@ async def request_validation_exception_handler(request: Request, exc: RequestVal
     This function will be called when client input is not valid.
     """
     logger.debug("Our custom request_validation_exception_handler was called")
-    body = await request.body()
+    body = request.body()
     query_params = request.query_params._dict  # pylint: disable=protected-access
-    detail = {"errors": exc.errors(), "body": body.decode(), "query_params": query_params}
+    detail = {"errors": exc.errors(), "query_params": query_params}
     logger.info(detail)
     return await _request_validation_exception_handler(request, exc)
 

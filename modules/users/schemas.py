@@ -7,7 +7,7 @@ from pydantic import field_validator, ConfigDict, BaseModel, Field, EmailStr, co
 from modules.users.models import CompanySize, UserType
 
 class CompanyProfile(BaseModel):
-    id: Optional[UUID] = None
+    # id: Optional[UUID] = None
     company_id: Optional[UUID] = None
     address: Optional[str]= None
     location: Optional[str]= None
@@ -47,10 +47,10 @@ class CreateCompanySchema(BaseModel):
     #     return value
 
 class UpdateCompanySchema(BaseModel):
-    name: str
-    description: str
-    logo_url: HttpUrl
-    profile: CompanyProfile 
+    name: Optional[str] = None
+    description: Optional[str] = None
+    logo_url: Optional[HttpUrl] = None
+    profile: Optional[CompanyProfile] = None
     model_config = ConfigDict(from_attributes=True)
 
 

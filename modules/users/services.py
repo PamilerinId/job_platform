@@ -84,7 +84,7 @@ async def create_company(payload: CreateCompanySchema,
     db.refresh(new_company)
     return {'message': 'Company created successfully', 'data': BaseCompany.from_orm(new_company)}   
 
-@router.patch('/companies', response_model=CustomResponse[BaseCompany], tags=["Companies"])
+@router.patch('/companies/{company_id}', response_model=CustomResponse[BaseCompany], tags=["Companies"])
 async def update_company_profile(company_id: Annotated[UUID, Path(title="The ID of the company to be updated")],
                                  payload: UpdateCompanySchema,
                current_user: Annotated[BaseUser, Depends(get_current_user)],
@@ -92,16 +92,20 @@ async def update_company_profile(company_id: Annotated[UUID, Path(title="The ID 
     
     if current_user.role == UserType.CANDIDATE:
         raise UnauthorisedUserException("User is not authorised to edit company details")
-    
-    if current_user.client_profile.company.id != company_id:
-        raise UnauthorisedUserException("User is not authorised to edit company details")
+
+    if current_user.client_profile.company.id != str(company_id):
+        raise UnauthorisedUserException("User is not authorised to edit this company details")
     
     company_query = db.query(Company).filter(Company.id == company_id)
     company = company_query.first()
     if company is None:
         raise NotFoundException("Company not found!")
     
-    company_query.update(payload.dict(exclude_unset=True), synchronize_session=False)
+    company_query.update(payload.dict(exclude={'profile'},exclude_unset=True), synchronize_session=False)
+    if payload.profile != None:
+        company_profile_query = db.query(CompanyProfile).filter(CompanyProfile.company_id == company_id)
+        company_profile_query.update(payload.profile.dict(exclude_unset=True), synchronize_session=False)
+    
     db.commit()
     
     return {"message":"Company profile updated successfully","data": company}
