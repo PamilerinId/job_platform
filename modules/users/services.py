@@ -107,13 +107,14 @@ async def update_company_profile(company_id: Annotated[UUID, Path(title="The ID 
     return {"message":"Company profile updated successfully","data": company}
 
 
-@router.patch('/profile', response_model=CustomResponse[BaseUser], tags=["User"])
+@router.patch('/profile', response_model=CustomResponse[BaseUser],
+            #   response_model_exclude_none=True, 
+              tags=["User"])
 async def update_user_profile(payload: Optional[UpdateUserProfile],
                current_user: Annotated[BaseUser, Depends(get_current_user)],
                db: Session = Depends(get_db),):
-    print('HERE0', flush=True)
+    
     user_query = db.query(User)
-    print('HERE', flush=True)
     if current_user.role == UserType.CANDIDATE:
         user = user_query.options(joinedload(User.candidate_profile)).filter(User.id == current_user.id).first()
         candidate_query = db.query(CandidateProfile).filter(CandidateProfile.user_id == current_user.id)
@@ -130,7 +131,7 @@ async def update_user_profile(payload: Optional[UpdateUserProfile],
         client_query = db.query(ClientProfile).filter(ClientProfile.user_id == current_user.id)
         client = client_query.first()
         if client is None:
-            new_profile = ClientProfile(**payload.candidate_profile.dict())
+            new_profile = ClientProfile(**payload.client_profile.dict())
             new_profile.user_id = current_user.id
             new_profile.updated_at = datetime.now()
             db.add(new_profile)
@@ -143,7 +144,6 @@ async def update_user_profile(payload: Optional[UpdateUserProfile],
     
     print(user, flush=True)
     user_query.update({'first_name': payload.first_name, 'last_name': payload.last_name, 'photo': payload.photo})
-    print('HERE3', flush=True)
     db.commit()
     db.refresh(user)
     

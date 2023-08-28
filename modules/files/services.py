@@ -107,5 +107,5 @@ async def create_upload_file(file: UploadFile, type: FileType,
     db.refresh(new_file)
 
     return {'message': 'File uploaded successfully',
-            'data': {"filename": file_name, "fileUrl": uploaded_file_url}}
+            'data': new_file}
 # Admin Routes
