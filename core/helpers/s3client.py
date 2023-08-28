@@ -36,7 +36,7 @@ async def generate_presigned_url(key: str):
 
 async def upload_files(contents: bytes, key: str, type: FileType):
     try:
-        if type == FileType.PROFILE_PHOTO:
+        if type == FileType.PROFILE_PHOTO or type == FileType.LOGO:
             folder = config.AWS_S3_FOLDER_PHOTOS 
         elif type == FileType.RESUME or type == FileType.COVER_LETTER:
             folder = config.AWS_S3_FOLDER_CVS

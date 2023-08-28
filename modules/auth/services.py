@@ -1,10 +1,12 @@
 from datetime import timedelta
 from typing import Annotated
+from pydantic import TypeAdapter
 
 from fastapi import Request
 from fastapi import Depends, HTTPException, status, APIRouter, Response
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.encoders import jsonable_encoder
+from modules.files.models import File, FileType
 from sqlalchemy.orm import Session
 
 from core.dependencies.sessions import get_db
@@ -17,6 +19,8 @@ from core.exceptions import *
 from modules.auth.schemas import LoginUserSchema, PasswordChangeSchema, PasswordResetRequestSchema, RegisterUserSchema
 from modules.users.models import Company, User
 from modules.users.schemas import *
+
+from modules.files.schemas import File as FileSchema
 
 router = APIRouter(
     prefix="/auth", tags=["Auth"]
@@ -197,11 +201,12 @@ async def confirm_email():
             response_model=CustomResponse[BaseUser], 
             response_model_exclude_none=True)
 def get_current_user(current_user: Annotated[BaseUser, Depends(get_current_user)], db: Session = Depends(get_db)):
-    # validate user and fetch profile 
-    data =  { 
-        **jsonable_encoder(BaseUser.from_orm(current_user))
-        }
-    return  {"message": "User profile successfully retrieved", "data": data}
+    if(current_user.role == UserType.CANDIDATE):
+        cv_files = db.query(File).filter(
+            File.owner_id == current_user.id, File.type == FileType.RESUME)\
+            .order_by(File.created_at.desc()).limit(3).all()
+        current_user.candidate_profile.cv = TypeAdapter(List[FileSchema]).validate_python(cv_files)
+    return  {"message": "User profile successfully retrieved", "data": current_user}
 
 
 #  TODO: 
