@@ -120,7 +120,7 @@ async def update_user_profile(payload: Optional[UpdateUserProfile],
         user = user_query.options(joinedload(User.candidate_profile)).filter(User.id == current_user.id).first()
         candidate_query = db.query(CandidateProfile).filter(CandidateProfile.user_id == current_user.id)
         candidate = candidate_query.first()
-        if candidate is None and payload.candidate_profile is not None:
+        if candidate is None and payload.candidate_profile != None:
             new_profile = CandidateProfile(**payload.candidate_profile.dict())
             new_profile.user_id = current_user.id
             new_profile.updated_at = datetime.now()
@@ -131,7 +131,7 @@ async def update_user_profile(payload: Optional[UpdateUserProfile],
         user = user_query.options(joinedload(User.client_profile)).filter(User.id == current_user.id).first()
         client_query = db.query(ClientProfile).filter(ClientProfile.user_id == current_user.id)
         client = client_query.first()
-        if client is None and payload.client_profile is not None:
+        if client is None and payload.client_profile != None:
             new_profile = ClientProfile(**payload.client_profile.dict())
             new_profile.user_id = current_user.id
             new_profile.updated_at = datetime.now()
