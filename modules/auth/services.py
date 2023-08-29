@@ -198,19 +198,19 @@ async def confirm_email():
 
 @router.get('/me', status_code=status.HTTP_200_OK,
             
-            response_model=CustomResponse[BaseUser], 
-            response_model_exclude_none=True)
+            response_model=CustomResponse[BaseUser]
+            )
 def get_current_user(current_user: Annotated[BaseUser, Depends(get_current_user)], db: Session = Depends(get_db)):
     if(current_user.role == UserType.CANDIDATE):
         cv_files = db.query(File).filter(
             File.owner_id == current_user.id, File.type == FileType.RESUME)\
             .order_by(File.created_at.desc()).limit(3).all()
         current_user.candidate_profile.cv = TypeAdapter(List[FileSchema]).validate_python(cv_files)
-    else:
-        company = db.query(Company).options(
-                joinedload(Company.profile)).filter(Company.owner_id == str(current_user.id)).first()
-        if company:
-            current_user.client_profile.company = company
+    # else:
+    #     company = db.query(Company).options(
+    #             joinedload(Company.profile)).filter(Company.owner_id == str(current_user.id)).first()
+    #     if company:
+    #         current_user.client_profile.company = company
     return  {"message": "User profile successfully retrieved", "data": current_user}
 
 
