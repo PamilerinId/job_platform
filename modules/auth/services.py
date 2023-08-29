@@ -7,7 +7,7 @@ from fastapi import Depends, HTTPException, status, APIRouter, Response
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.encoders import jsonable_encoder
 from modules.files.models import File, FileType
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from core.dependencies.sessions import get_db
 from core.dependencies.auth import TokenHelper, get_current_user
@@ -206,6 +206,11 @@ def get_current_user(current_user: Annotated[BaseUser, Depends(get_current_user)
             File.owner_id == current_user.id, File.type == FileType.RESUME)\
             .order_by(File.created_at.desc()).limit(3).all()
         current_user.candidate_profile.cv = TypeAdapter(List[FileSchema]).validate_python(cv_files)
+    else:
+        company = db.query(Company).options(
+                joinedload(Company.profile)).filter(Company.owner_id == str(current_user.id)).first()
+        if company:
+            current_user.client_profile.company = company
     return  {"message": "User profile successfully retrieved", "data": current_user}
 
 
