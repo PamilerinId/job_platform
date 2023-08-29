@@ -32,7 +32,9 @@ async def fetch_jobs(current_user: Annotated[BaseUser, Depends(get_current_user)
     # if user is candidate; get industry related tags
     if (current_user.role == UserType.CANDIDATE):
         jobs_query = db.query(Job).options(
-            joinedload(Job.company)).filter(
+            joinedload(Job.company))
+        if search:
+            jobs_query.filter(
             Job.tags.contains([search]))
     # if user is client; filter by company jobs
     # elif(current_user.user.role == UserType.CLIENT):
