@@ -17,7 +17,7 @@ from core.env import config
 from core.exceptions import *
 
 from modules.auth.schemas import LoginUserSchema, PasswordChangeSchema, PasswordResetRequestSchema, RegisterUserSchema
-from modules.users.models import Company, User
+from modules.users.models import CandidateProfile, ClientProfile, Company, User
 from modules.users.schemas import *
 
 from modules.files.schemas import File as FileSchema
@@ -79,6 +79,11 @@ async def create_candidate(payload: RegisterUserSchema, db: Session = Depends(ge
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
+    # update related models
+    new_candidate_profile = CandidateProfile(user_id=new_user.id)
+    new_candidate_profile.updated_at = datetime.now()
+    db.add(new_candidate_profile)
+    db.commit()
     # TODO: Generate confirm email OTP and Send Welcome email
     data =  { **jsonable_encoder(BaseUser.from_orm(new_user)), 
             "token":TokenHelper.encode(jsonable_encoder(BaseUser.from_orm(new_user)))}
@@ -110,6 +115,11 @@ async def create_client(payload: RegisterUserSchema, db: Session = Depends(get_d
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
+    # update related models
+    new_client_profile = ClientProfile(user_id=new_user.id)
+    new_client_profile.updated_at = datetime.now()
+    db.add(new_client_profile)
+    db.commit()
     #TODO: Generate confirm email OTP and Send Welcome email
     data =  { **jsonable_encoder(BaseUser.from_orm(new_user)), 
             "token":TokenHelper.encode(jsonable_encoder(BaseUser.from_orm(new_user)))}

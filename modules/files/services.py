@@ -93,8 +93,6 @@ async def create_upload_file(file: UploadFile, type: FileType,
         profile_query = db.query(ClientProfile).filter(ClientProfile.user_id == current_user.id)
         company_query = db.query(Company).filter(or_(Company.owner_id == str(current_user.id)))
 
-    print(user_query, flush=True)
-
     if type == FileType.PROFILE_PHOTO:
         user_query.update({'photo': uploaded_file_url}, synchronize_session=False)
     # elif type == FileType.RESUME:
