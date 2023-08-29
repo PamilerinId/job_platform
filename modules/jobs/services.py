@@ -71,8 +71,9 @@ def create_job(payload: CreateJobSchema,
     # TODO: update tags with field slugs
     if current_user.role == UserType.CANDIDATE:
         raise ForbiddenException("User not authorised to create jobs")
+    company = db.query(Company).filter(Company.owner_id == str(current_user.id)).first()
     title_slug = to_slug(payload.title)
-    job = db.query(Job).filter(Job.company_id == current_user.client_profile.company.id ,Job.slug == title_slug).first()
+    job = db.query(Job).filter(Job.company_id == company.id ,Job.slug == title_slug).first()
     if job:
         # Contact company owner message, reach out to support email
         raise DuplicateValueException("There may be a similar job ad already created by your company, Check 'All Jobs' tab")
@@ -80,7 +81,7 @@ def create_job(payload: CreateJobSchema,
     new_job = Job(**payload.__dict__)
     new_job.slug = title_slug
     new_job.tags = [title_slug, to_slug(payload.type), to_slug(payload.title), to_slug(payload.title)]
-    new_job.company_id = current_user.client_profile.company.id
+    new_job.company_id = company.id
     new_job.updated_at = datetime.now()
     new_job.deadline = datetime.now() + timedelta(days=10)
     db.add(new_job)
