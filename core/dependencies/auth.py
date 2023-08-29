@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from modules.users.schemas import BaseCandidate, BaseClient, BaseUser
 from modules.auth.schemas import RefreshTokenSchema
-from modules.users.models import User, UserType, Company
+from modules.users.models import ClientProfile, User, UserType, Company
 
 from core.env import config
 from core.dependencies.sessions import get_db
@@ -95,7 +95,8 @@ async def get_current_user(request: Request, token: Annotated[str, Depends(oauth
     
     if (role == UserType.CLIENT):
         user = db.query(User).options(
-                joinedload(User.client_profile)).filter(User.email == user_email).first()
+                joinedload(User.client_profile)
+                .joinedload(ClientProfile.company)).filter(User.email == user_email).first()
     elif (role == UserType.CANDIDATE):
         user = db.query(User).options(
                 joinedload(User.candidate_profile)).filter(User.email == user_email).first()
