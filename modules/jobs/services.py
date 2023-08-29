@@ -39,10 +39,11 @@ async def fetch_jobs(current_user: Annotated[BaseUser, Depends(get_current_user)
     # if user is client; filter by company jobs
     # elif(current_user.user.role == UserType.CLIENT):
     else:
+        company = db.query(Company).filter(Company.owner_id == str(current_user.id)).first()
         jobs_query = db.query(Job).options(
             joinedload(Job.company)
             .joinedload(Company.profile)).filter(
-            Job.company_id == current_user.client_profile.company.id)
+            Job.company_id == company.id)
     # if no user; no jobs
     # if thirdparty; filter tier [distinct user]
     jobs = jobs_query.limit(limit).offset(skip).all()
