@@ -113,7 +113,7 @@ def update_job(job_id: Annotated[UUID, Path(title="The ID of the job to be updat
     
     return {"message":"Job updated successfully","data": job}
 
-@router.patch('/{job_id}/publish', response_model=CustomResponse[BaseJob] , tags=["Jobs"])
+@router.patch('/publish/{job_id}', response_model=CustomResponse[BaseJob] , tags=["Jobs"])
 def update_job(job_id: Annotated[UUID, Path(title="The ID of the job to be updated")],
                current_user: Annotated[BaseUser, Depends(get_current_user)],
                db: Session = Depends(get_db),):
