@@ -98,12 +98,44 @@ def update_job(job_id: Annotated[UUID, Path(title="The ID of the job to be updat
                payload: UpdateJobSchema,
                current_user: Annotated[BaseUser, Depends(get_current_user)],
                db: Session = Depends(get_db),):
-    job_query = db.query(Job).filter(Job.id == job_id)
+    company = db.query(Company).filter(Company.owner_id == str(current_user.id)).first()
+    
+    job_query = db.query(Job).options(
+        joinedload(Job.company)
+        .joinedload(Company.profile)).filter(Job.id == job_id,
+        Job.company_id == company.id)
     job = job_query.first()
     if job is None:
         raise NotFoundException("Job not found!")
     
     job_query.update(payload.dict(exclude_unset=True), synchronize_session=False)
+    db.commit()
+    
+    return {"message":"Job updated successfully","data": job}
+
+@router.patch('/{job_id}/publish', response_model=CustomResponse[BaseJob] , tags=["Jobs"])
+def update_job(job_id: Annotated[UUID, Path(title="The ID of the job to be updated")],
+               current_user: Annotated[BaseUser, Depends(get_current_user)],
+               db: Session = Depends(get_db),):
+    
+    company = db.query(Company).filter(Company.owner_id == str(current_user.id)).first()
+
+    job_query = db.query(Job).options(
+        joinedload(Job.company)
+        .joinedload(Company.profile)).filter(Job.id == job_id,
+        Job.company_id == company.id)
+    
+    job = job_query.first()
+    if job is None:
+        raise NotFoundException("Job not found!")
+    
+    if job.status == JobStatus.ACTIVE:
+        raise BadRequestException('Job is already published')
+    
+    if job.status == JobStatus.CLOSED:
+        raise BadRequestException('Job Deadline is past, contact support or create a new job')
+    
+    job_query.update({'status':JobStatus.ACTIVE}, synchronize_session=False)
     db.commit()
     
     return {"message":"Job updated successfully","data": job}
