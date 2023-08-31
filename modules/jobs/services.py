@@ -52,11 +52,8 @@ async def fetch_jobs(current_user: Annotated[BaseUser, Depends(get_current_user)
     return {'message': 'Jobs retrieved successfully', 'count': len(jobs), 'data': jobs}
 
 @router.get("/recommended", response_model=CustomListResponse[BaseJob], tags=["Jobs"])
-async def fetch_jobs(current_user: Annotated[BaseUser, Depends(get_current_user)],
-                     db: Session = Depends(get_db), 
-                     limit: int = 10, page: int = 1):
-    
-    skip = (page - 1) * limit
+async def fetch_recommended_jobs(current_user: Annotated[BaseUser, Depends(get_current_user)],
+                     db: Session = Depends(get_db)):
 
     # if user is candidate; get industry related tags
     jobs_query = db.query(Job).options(joinedload(Job.company))
@@ -66,7 +63,7 @@ async def fetch_jobs(current_user: Annotated[BaseUser, Depends(get_current_user)
     # if user is client; filter by company jobs
     # elif(current_user.user.role == UserType.CLIENT):
     
-    jobs = jobs_query.limit(limit).offset(skip).all()
+    jobs = jobs_query.limit(5).all()
     if len(jobs) < 1: 
         raise NotFoundException('No Jobs found')
     return {'message': 'Jobs retrieved successfully', 'count': len(jobs), 'data': jobs}
@@ -153,7 +150,7 @@ def update_job(job_id: Annotated[UUID, Path(title="The ID of the job to be updat
     return {"message":"Job updated successfully","data": job}
 
 @router.patch('/publish/{job_id}', response_model=CustomResponse[BaseJob] , tags=["Jobs"])
-def update_job(job_id: Annotated[UUID, Path(title="The ID of the job to be updated")],
+def publish_job(job_id: Annotated[UUID, Path(title="The ID of the job to be updated")],
                current_user: Annotated[BaseUser, Depends(get_current_user)],
                db: Session = Depends(get_db),):
     
