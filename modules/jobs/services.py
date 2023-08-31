@@ -239,11 +239,12 @@ async def get_job_applications(job_id: Annotated[Optional[UUID], Path(title="The
     job  = db.query(Job).filter(Job.id==job_id).first()
     if (job is None) or (job.status == JobStatus.CLOSED):
         raise NotFoundException("Job does not exist or has been closed.")
-
+    
+    company = db.query(Company).filter(Company.owner_id == str(current_user.id)).first()
     application_query = db.query(Application).options(
                                     joinedload(Application.job)
                                     .joinedload(Job.company)).filter(Application.job_id == job_id,
-                                                      Job.company_id == current_user.client_profile.company.id, Application.status == ApplicationStatus.SHORTLISTED)
+                                                      Job.company_id == company.id, Application.status == ApplicationStatus.SHORTLISTED)
     applications = application_query.all()
     if len(applications) < 1:
         raise NotFoundException("No Applications Found")
