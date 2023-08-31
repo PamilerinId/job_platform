@@ -51,6 +51,45 @@ async def fetch_jobs(current_user: Annotated[BaseUser, Depends(get_current_user)
         raise NotFoundException('No Jobs found')
     return {'message': 'Jobs retrieved successfully', 'count': len(jobs), 'data': jobs}
 
+@router.get("/recommended", response_model=CustomListResponse[BaseJob], tags=["Jobs"])
+async def fetch_jobs(current_user: Annotated[BaseUser, Depends(get_current_user)],
+                     db: Session = Depends(get_db), 
+                     limit: int = 10, page: int = 1):
+    
+    skip = (page - 1) * limit
+
+    # if user is candidate; get industry related tags
+    jobs_query = db.query(Job).options(joinedload(Job.company))
+    if current_user.candidate_profile:
+        jobs_query.filter(
+            Job.tags.contains([current_user.candidate_profile.skills]))
+    # if user is client; filter by company jobs
+    # elif(current_user.user.role == UserType.CLIENT):
+    
+    jobs = jobs_query.limit(limit).offset(skip).all()
+    if len(jobs) < 1: 
+        raise NotFoundException('No Jobs found')
+    return {'message': 'Jobs retrieved successfully', 'count': len(jobs), 'data': jobs}
+
+@router.get('/applications', response_model=CustomListResponse[BaseApplication], tags=["Applications"])
+async def get_applications(current_user: Annotated[BaseUser, Depends(get_current_user)],
+                                db: Session = Depends(get_db),):
+    '''
+    Candidate:
+    if just applications; get all the applications of the candidate
+    if appended with job id return job_id and appliication [possibly unnecessary]
+    '''
+    if (current_user.role == UserType.CLIENT):
+        raise BadRequestException("Get applications by job!")
+    
+    query = db.query(Application).filter(Application.applicant_id==current_user.id)
+    applications = query.all()
+    # elif current_user.role == UserType.CLIENT: # check if client -> company -> job -> application ownership
+    #     query = db.query(Application).filter(Application.job_id)
+    if len(applications) < 1:
+        raise NotFoundException("No Applications Found")
+    return {"message":"Applications retrieved successful","count": len(applications),"data": applications}
+
 
 @router.get('/{job_id}', tags=["Jobs"], response_model=CustomResponse[BaseJob])
 def get_job(job_id: Annotated[UUID, Path(title="The ID of the job to be fetched")],
@@ -156,6 +195,7 @@ async def delete_job(job_id: Annotated[UUID, Path(title="The ID of the job to be
     except BadRequestException:
         db.rollback()
         raise BadRequestException("Job delete failed")
+    
 
 
 @router.post('/{job_id}/apply', response_model=CustomResponse[BaseApplication], tags=["Applications"])
@@ -206,32 +246,13 @@ async def get_job_applications(job_id: Annotated[Optional[UUID], Path(title="The
     application_query = db.query(Application).options(
                                     joinedload(Application.job)
                                     .joinedload(Job.company)).filter(Application.job_id == job_id,
-                                                      Job.company_id == current_user.client_profile.company.id)
+                                                      Job.company_id == current_user.client_profile.company.id, Application.status == ApplicationStatus.SHORTLISTED)
     applications = application_query.all()
     if len(applications) < 1:
         raise NotFoundException("No Applications Found")
     return {"message":"Applications retrieved successful","count": len(applications),"data": applications}
 
-@router.get('/applications', response_model=CustomListResponse, tags=["Applications"])
-async def get_applications(current_user: Annotated[BaseUser, Depends(get_current_user)],
-                                db: Session = Depends(get_db),):
-    '''
-    Candidate:
-    if just applications; get all the applications of the candidate
-    if appended with job id return job_id and appliication [possibly unnecessary]
-    '''
-    if (current_user.role == UserType.CLIENT):
-        raise BadRequestException("Get applications by job!")
-    
-    query = db.query(Application).filter(Application.candidate_id==current_user.id)
-    applications = query.all()
-    # elif current_user.role == UserType.CLIENT: # check if client -> company -> job -> application ownership
-    #     query = db.query(Application).filter(Application.job_id)
-    if len(applications) < 1:
-        raise NotFoundException("No Applications Found")
-    return {"message":"Applications retrieved successful","count": len(applications),"data": applications}
-
-@router.put('/applications/{application_id}', response_model=CustomResponse, tags=["Applications"])
+@router.put('/applications/{application_id}', response_model=CustomResponse[BaseApplication], tags=["Applications"])
 async def update_application(application_id: Annotated[UUID, Path(title="The ID of the application to be updated")],
                              payload: UpdateApplication,
                              current_user: Annotated[BaseUser, Depends(get_current_user)],
@@ -246,6 +267,27 @@ async def update_application(application_id: Annotated[UUID, Path(title="The ID 
         raise NotFoundException("Application not found!")
     
     application_query.update(payload.dict(exclude_unset=True), synchronize_session=False)
+    db.commit()
+    
+    return {"message":"Application updated successfully","data": application}
+
+@router.put('/applications/shortlist/{application_id}', response_model=CustomResponse[BaseApplication], tags=["Applications"])
+async def shortlist_application(application_id: Annotated[UUID, Path(title="The ID of the application to be updated")],
+                             current_user: Annotated[BaseUser, Depends(get_current_user)],
+                                db: Session = Depends(get_db),):
+    if current_user == UserType.CANDIDATE:
+        raise ForbiddenException('You are not allowed to update this application!')
+
+    application_query = db.query(Application).filter(or_(Application.id == application_id, Application.applicant_id == current_user.id))
+    application = application_query.first()
+
+    if application is None:
+        raise NotFoundException("Application not found!")
+    
+    if application.status == ApplicationStatus.SHORTLISTED:
+        raise BadRequestException("This application has already been shortlisted.")
+    
+    application_query.update({'status': ApplicationStatus.SHORTLISTED}, synchronize_session=False)
     db.commit()
     
     return {"message":"Application updated successfully","data": application}
