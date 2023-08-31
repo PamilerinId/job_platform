@@ -247,7 +247,8 @@ async def get_job_applications(job_id: Annotated[Optional[UUID], Path(title="The
                                                       Job.company_id == company.id)#, Application.status == ApplicationStatus.SHORTLISTED)
     applications = application_query.all()
     if len(applications) < 1:
-        raise NotFoundException("No Applications Found")
+        # raise NotFoundException("No Applications Found")
+        return {"message":"No Applications Found!"}
     return {"message":"Applications retrieved successful","count": len(applications),"data": applications}
 
 @router.put('/applications/{application_id}', response_model=CustomResponse[BaseApplication], tags=["Applications"])
