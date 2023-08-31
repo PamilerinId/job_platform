@@ -32,7 +32,6 @@ class CreateJobSchema(BaseModel):
     title: str = Field(index=True)
     description: str
     type: Optional[JobType] = None
-    status: JobStatus
     experienceLevel: Optional[ExperienceLevel] = None
     location: str
     locationType: Optional[LocationType] = None

@@ -25,7 +25,7 @@ class Job(Base):
     # Metadata
     type = Column(Enum(JobType), nullable=False)
     experienceLevel = Column(Enum(ExperienceLevel), nullable=False)
-    status = Column(Enum(JobStatus), nullable=False)
+    status = Column(Enum(JobStatus), server_default=JobStatus.DRAFT, nullable=False)
     location = Column(String, nullable=False)
     locationType = Column(Enum(LocationType), nullable=False)
     qualifications = Column(ARRAY(Enum(Qualification)), nullable=False)
