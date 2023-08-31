@@ -244,7 +244,7 @@ async def get_job_applications(job_id: Annotated[Optional[UUID], Path(title="The
     application_query = db.query(Application).options(
                                     joinedload(Application.job)
                                     .joinedload(Job.company)).filter(Application.job_id == job_id,
-                                                      Job.company_id == company.id, Application.status == ApplicationStatus.SHORTLISTED)
+                                                      Job.company_id == company.id)#, Application.status == ApplicationStatus.SHORTLISTED)
     applications = application_query.all()
     if len(applications) < 1:
         raise NotFoundException("No Applications Found")
