@@ -214,6 +214,9 @@ async def create_application(job_id: Annotated[UUID, Path(title="The ID of the j
     if application_query:
         raise DuplicateValueException("You may have applied for this job")
     
+    if current_user.candidate_profile is None:
+        raise BadRequestException("Candidate profile is incomplete, complete profile to apply")
+    
     new_app = Application(**{"status":ApplicationStatus.PENDING,
                              "job_id" : job_id,
                              "applicant_id":current_user.id,
