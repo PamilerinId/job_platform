@@ -123,6 +123,7 @@ def create_job(payload: CreateJobSchema,
     new_job.company_id = company.id
     new_job.updated_at = datetime.now()
     new_job.deadline = datetime.now() + timedelta(days=10)
+    new_job.status =  JobStatus.DRAFT
     db.add(new_job)
     db.commit()
     db.refresh(new_job)
