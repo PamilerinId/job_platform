@@ -96,7 +96,7 @@ async def update_company_profile(company_id: Annotated[UUID, Path(title="The ID 
     company = db.query(Company).options(
                 joinedload(Company.profile)).filter(Company.owner_id == str(current_user.id)).first()
 
-    if company.id != str(company_id):
+    if company.id != company_id:
         raise UnauthorisedUserException("User is not authorised to edit this company details")
     
     company_query = db.query(Company).filter(Company.id == company_id)
