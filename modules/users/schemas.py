@@ -6,6 +6,18 @@ from pydantic import field_validator, ConfigDict, BaseModel, Field, EmailStr, co
 
 from modules.users.models import CompanySize, UserType
 
+
+class Onboarding(BaseModel):
+    profile_complete: Optional[bool]= None
+    verify_email: Optional[bool] = None
+    photo_uploaded: Optional[bool]= None
+    cv_uploaded: Optional[bool] = None
+    verify_company: Optional[bool] = None
+    company_profile_complete: Optional[bool] = None
+    post_first_job: Optional[bool]= None
+    invite_team: Optional[bool] = None
+
+
 class CompanyProfile(BaseModel):
     # id: Optional[UUID] = None
     company_id: Optional[UUID] = None
@@ -49,7 +61,7 @@ class CreateCompanySchema(BaseModel):
 class UpdateCompanySchema(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
-    logo_url: Optional[HttpUrl] = None
+    logo_url: Optional[str] = None
     profile: Optional[CompanyProfile] = None
     model_config = ConfigDict(from_attributes=True)
 
@@ -71,6 +83,7 @@ class BaseClient(BaseModel):
     company: Optional[BaseCompany]= None
     title: Optional[str] = None
     model_config = ConfigDict(from_attributes=True, validate_assignment=True)
+
 class BaseUser(BaseModel):
     id: Optional[UUID] = None
     email: EmailStr = Field(None, description="email")
@@ -80,6 +93,7 @@ class BaseUser(BaseModel):
     role: Optional[UserType]=None
     client_profile : Optional[BaseClient] = None
     candidate_profile: Optional[BaseCandidate] = None
+    onboarding_steps: Optional[Onboarding] = None
     model_config = ConfigDict(from_attributes=True, validate_assignment=True)
 
 
