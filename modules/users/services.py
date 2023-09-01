@@ -159,8 +159,13 @@ async def update_user_profile(payload: Optional[UpdateUserProfile],
     
     if user is None:
         raise NotFoundException("User not found!")
-    
-    user_query.update({'first_name': payload.first_name, 'last_name': payload.last_name, 'photo': payload.photo})
+    if payload.first_name:
+        user_query.update({'first_name': payload.first_name})
+    if payload.last_name:
+        user_query.update({'last_name': payload.last_name}) 
+    if payload.photo:
+        user_query.update({'photo': payload.photo})
+        
     db.commit()
     db.refresh(user)
     
