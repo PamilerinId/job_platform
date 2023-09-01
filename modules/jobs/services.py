@@ -1,7 +1,10 @@
 from datetime import timedelta, datetime
 from typing import Annotated
+from pydantic import TypeAdapter
 from core.exceptions.base import BadRequestException, DuplicateValueException, ForbiddenException, NotFoundException
 from fastapi import Depends, HTTPException, status, APIRouter, Response, Path
+from modules.files.models import File, FileType
+from modules.files.schemas import File as FileSchema
 from modules.users.models import UserType
 from modules.users.schemas import BaseClient, BaseUser
 from sqlalchemy import or_
@@ -253,6 +256,13 @@ async def get_job_applications(job_id: Annotated[Optional[UUID], Path(title="The
     if len(applications) < 1:
         # raise NotFoundException("No Applications Found")
         return {"message":"No Applications Found!"}
+    
+    for application in applications:
+        cv_files = db.query(File).filter(
+            File.owner_id == application.applicant.id, File.type == FileType.RESUME)\
+            .order_by(File.created_at.desc()).limit(3).all()
+        application.applicant.candidate_profile.cv = TypeAdapter(List[FileSchema]).validate_python(cv_files)
+        
     return {"message":"Applications retrieved successful","count": len(applications),"data": applications}
 
 @router.put('/applications/{application_id}', response_model=CustomResponse[BaseApplication], tags=["Applications"])
