@@ -215,7 +215,8 @@ def get_current_user(current_user: Annotated[BaseUser, Depends(get_current_user)
         cv_files = db.query(File).filter(
             File.owner_id == current_user.id, File.type == FileType.RESUME)\
             .order_by(File.created_at.desc()).limit(3).all()
-        current_user.candidate_profile.cv = TypeAdapter(List[FileSchema]).validate_python(cv_files)
+        if current_user.candidate_profile:
+            current_user.candidate_profile.cv = TypeAdapter(List[FileSchema]).validate_python(cv_files)
     else:
         company = db.query(Company).options(
                 joinedload(Company.profile)).filter(Company.owner_id == str(current_user.id)).first()
@@ -223,8 +224,9 @@ def get_current_user(current_user: Annotated[BaseUser, Depends(get_current_user)
             current_user.client_profile.company = company
     return  {"message": "User profile successfully retrieved", "data": current_user}
 
+def onboarding_checker(current_user: BaseUser):
+    # get full user profile
+    onboarding_status = Onboarding()
 
 #  TODO: 
-# - Reset password /reset-password
-# - Change password /change-password
 # - Confirm email /confirm-email
