@@ -8,14 +8,14 @@ from modules.users.models import CompanySize, UserType
 
 
 class Onboarding(BaseModel):
-    profile_complete: Optional[bool]= None
-    verify_email: Optional[bool] = None
-    photo_uploaded: Optional[bool]= None
-    cv_uploaded: Optional[bool] = None
-    verify_company: Optional[bool] = None
-    company_profile_complete: Optional[bool] = None
-    post_first_job: Optional[bool]= None
-    invite_team: Optional[bool] = None
+    profile_complete: Optional[bool]= False
+    verify_email: Optional[bool] = False
+    photo_uploaded: Optional[bool]= False
+    cv_uploaded: Optional[bool] = False
+    verify_company: Optional[bool] = False
+    company_profile_complete: Optional[bool] = False
+    post_first_job: Optional[bool]= False
+    invite_team: Optional[bool] = False
 
 
 class CompanyProfile(BaseModel):
