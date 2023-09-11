@@ -174,7 +174,7 @@ async def password_reset_request(payload: PasswordResetRequestSchema,
         raise UserNotFoundException
     
     # Generate token and TODO: send mail
-    data =  {"token":TokenHelper.encode({"id": user.id, "email": user.email}, 900)}
+    data =  {"token":TokenHelper.encode({"id": str(user.id), "email": user.email}, 900)}
     
     return  {"message": "Password reset requested successfully", "data":data}
 
