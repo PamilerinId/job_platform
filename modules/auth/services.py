@@ -206,6 +206,23 @@ async def confirm_email():
     return True
 
 
+def onboarding_checker(current_user: BaseUser, db):
+    # get full user profile
+    user = db.query(User).filter(User.email == current_user.email)
+    new_user = user.first()
+
+    if user is None:
+        raise UserNotFoundException
+    
+    # check db values and update
+    # email verification
+    onboarding_status = Onboarding(verify_email=new_user.email_verified)
+    # client profile checks
+    # candidate profile checks
+
+    return onboarding_status
+
+
 @router.get('/me', status_code=status.HTTP_200_OK,
             
             response_model=CustomResponse[BaseUser]
@@ -222,11 +239,9 @@ def get_current_user(current_user: Annotated[BaseUser, Depends(get_current_user)
                 joinedload(Company.profile)).filter(Company.owner_id == str(current_user.id)).first()
         if company:
             current_user.client_profile.company = company
-    return  {"message": "User profile successfully retrieved", "data": current_user}
 
-def onboarding_checker(current_user: BaseUser):
-    # get full user profile
-    onboarding_status = Onboarding()
+    current_user.onboarding_steps = onboarding_checker(current_user, db)
+    return  {"message": "User profile successfully retrieved", "data": current_user}
 
 #  TODO: 
 # - Confirm email /confirm-email
