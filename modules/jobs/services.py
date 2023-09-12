@@ -114,6 +114,8 @@ def create_job(payload: CreateJobSchema,
     if current_user.role == UserType.CANDIDATE:
         raise ForbiddenException("User not authorised to create jobs")
     company = db.query(Company).filter(Company.owner_id == str(current_user.id)).first()
+    if company is None:
+        raise BadRequestException('Please complete company profile')
     title_slug = to_slug(payload.title)
     job = db.query(Job).filter(Job.company_id == company.id ,Job.slug == title_slug).first()
     if job:
@@ -159,6 +161,9 @@ def publish_job(job_id: Annotated[UUID, Path(title="The ID of the job to be upda
                db: Session = Depends(get_db),):
     
     company = db.query(Company).filter(Company.owner_id == str(current_user.id)).first()
+
+    if company is None:
+        raise BadRequestException('Please complete company profile')
 
     job_query = db.query(Job).options(
         joinedload(Job.company)
