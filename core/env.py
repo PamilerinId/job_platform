@@ -11,6 +11,7 @@ class Config(BaseSettings):
     DEBUG: bool = True
     APP_HOST: str = "0.0.0.0"
     APP_PORT: int = 8005
+    SECRET_KEY: str | None = os.environ.get("SECRET_KEY")
     POSTGRES_USER : str | None = os.environ.get("POSTGRES_USER")
     POSTGRES_PASSWORD:str | None = os.environ.get("POSTGRES_PASSWORD")
     POSTGRES_SERVER : str | None= os.environ.get("POSTGRES_SERVER")
@@ -34,6 +35,8 @@ class Config(BaseSettings):
     AWS_S3_FOLDER_PHOTOS: str | None = os.environ.get("AWS_S3_FOLDER_PHOTOS")
     AWS_S3_FOLDER_CVS: str | None = os.environ.get("AWS_S3_FOLDER_CVS")
     AWS_S3_FOLDER_PROCTOR: str | None = os.environ.get("AWS_S3_FOLDER_PROCTOR")
+    GOOGLE_CLIENT_ID: str | None = os.environ.get("GOOGLE_CLIENT_ID")
+    GOOGLE_CLIENT_SECRET: str | None = os.environ.get("GOOGLE_CLIENT_SECRET")
     # CELERY_BROKER_URL: str = "amqp://user:bitnami@localhost:5672/"
     # CELERY_BACKEND_URL: str = "redis://:password123@localhost:6379/0"
     # REDIS_HOST: str = "localhost"

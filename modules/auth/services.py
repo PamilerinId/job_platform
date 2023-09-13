@@ -6,11 +6,12 @@ from fastapi import Request
 from fastapi import Depends, HTTPException, status, APIRouter, Response
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.encoders import jsonable_encoder
+from authlib.integrations.starlette_client import OAuthError
 from modules.files.models import File, FileType
 from sqlalchemy.orm import Session, joinedload
 
 from core.dependencies.sessions import get_db
-from core.dependencies.auth import TokenHelper, get_current_user
+from core.dependencies.auth import TokenHelper, get_current_user, custom_oauth
 from core.helpers import password
 from core.helpers.schemas import CustomResponse
 from core.env import config
@@ -155,6 +156,55 @@ def login(payload: LoginUserSchema, db: Session = Depends(get_db)):
             "token":TokenHelper.encode(jsonable_encoder(BaseUser.from_orm(user)))}
     
     return  {"message": "User logged in successfully", "data": data}
+
+
+@router.get("/login/google")
+async def login_via_google(request: Request):
+    print("request", request.session)
+    redirect_uri = request.url_for('auth_via_google')
+    return await custom_oauth.google.authorize_redirect(request, redirect_uri)
+
+@router.get("/google/callback", 
+            status_code=status.HTTP_200_OK,
+            response_model=CustomResponse[AuthUser],)
+async def auth_via_google(request: Request, db: Session = Depends(get_db)):
+    print(config.SECRET_KEY)
+    print("request", request.session)
+    # token = await custom_oauth.google.authorize_access_token(request)
+    # if "user" in request.session:
+    try:
+        access_token = await custom_oauth.google.authorize_access_token(request)
+    except OAuthError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail='Could not validate credentials',
+            headers={'WWW-Authenticate': 'Bearer'},
+        )
+    # fetch user internally or register
+    user = access_token['userinfo']
+    user_object = db.query(User).filter(
+        User.email == user.email.lower()).first()
+    
+    if not user_object:
+        # register user
+        new_user = User(first_name=user.given_name,last_name=user.family_name,email=user.email, photo=user.picture, password='p@ss!234_')
+        new_user.role = UserType.CANDIDATE
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
+        # update related models
+        new_candidate_profile = CandidateProfile(user_id=new_user.id)
+        new_candidate_profile.updated_at = datetime.now()
+        db.add(new_candidate_profile)
+        db.commit()
+        # TODO: Generate confirm email OTP and Send Welcome email
+        data =  { **jsonable_encoder(BaseUser.from_orm(new_user)), 
+                "token":TokenHelper.encode(jsonable_encoder(BaseUser.from_orm(new_user)))}
+    else:
+        data =  { **jsonable_encoder(BaseUser.from_orm(user_object)), 
+                "token":TokenHelper.encode(jsonable_encoder(BaseUser.from_orm(user_object)))}
+    
+    return {"message":"User logged in successfully","data": data} 
 
 
 @router.get('/logout', status_code=status.HTTP_200_OK)

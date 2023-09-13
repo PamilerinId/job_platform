@@ -1,8 +1,11 @@
+import os
 import base64
 from datetime import datetime, timedelta
 from typing import Annotated
 
 import jwt
+from starlette.config import Config
+from authlib.integrations.starlette_client import OAuth
 from fastapi import Depends, Request, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session, joinedload
@@ -18,6 +21,21 @@ from core.exceptions.auth import DecodeTokenException, ExpiredTokenException, Us
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/token")
+
+
+# Set up oauth
+config_data = {'GOOGLE_CLIENT_ID': config.GOOGLE_CLIENT_ID, 'GOOGLE_CLIENT_SECRET': config.GOOGLE_CLIENT_SECRET}
+starlette_config = Config(environ=config_data)
+custom_oauth = OAuth(starlette_config)
+
+# google reg
+custom_oauth.register(
+    name='google',
+    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
+    client_kwargs={'scope': 'openid email profile'},
+)
+# linkedin reg
+# custom_oauth.register(name="linkedin",)
 
 
 
