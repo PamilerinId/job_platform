@@ -2,6 +2,7 @@ from enum import Enum
 from typing_extensions  import Annotated
 from typing import List
 from starlette.exceptions import HTTPException
+from starlette.middleware.sessions import SessionMiddleware
 from fastapi.exceptions import RequestValidationError
 from fastapi import FastAPI, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
@@ -55,6 +56,7 @@ def on_auth_error(request: Request, exc: Exception):
 
 
 def init_middleware(app_: FastAPI) -> None:
+    app_.add_middleware(SessionMiddleware, secret_key=config.SECRET_KEY, same_site='lax')
     app_.add_middleware(
         CORSMiddleware,
         allow_origins=['http://localhost:3000/',
@@ -83,7 +85,6 @@ def init_exception_handlers(app_: FastAPI) -> None:
 
 # sentry_sdk.init(
 #     dsn=config.SENTRY_DSN,
-
 #     # Set traces_sample_rate to 1.0 to capture 100%
 #     # of transactions for performance monitoring.
 #     # We recommend adjusting this value in production,
