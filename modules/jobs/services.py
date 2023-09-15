@@ -38,7 +38,6 @@ async def fetch_jobs(current_user: Annotated[BaseUser, Depends(get_current_user)
         if search:
             jobs_query.filter(
             Job.tags.contains([search]))
-        jobs_query.order_by(Job.deadline.desc())
     # if user is client; filter by company jobs
     # elif(current_user.user.role == UserType.CLIENT):
     elif(current_user.role == UserType.CLIENT.value):
@@ -52,13 +51,13 @@ async def fetch_jobs(current_user: Annotated[BaseUser, Depends(get_current_user)
             jobs_query = db.query(Job).options(
                 joinedload(Job.company)
                 .joinedload(Company.profile)).filter(
-                Job.company_id == current_user.client_profile.company.id).order_by(Job.created_at.desc())
+                Job.company_id == current_user.client_profile.company.id)
         else:
             return {'message': 'You have created no Jobs'}
             # raise NotFoundException('You have created no Jobs')
     # if no user; no jobs
     # if thirdparty; filter tier [distinct user]
-    jobs = jobs_query.limit(limit).offset(skip).all()
+    jobs = jobs_query.order_by(Job.created_at.desc()).limit(limit).offset(skip).all()
     if len(jobs) < 1: 
         raise NotFoundException('No Jobs found')
     return {'message': 'Jobs retrieved successfully', 'count': len(jobs), 'data': jobs}
