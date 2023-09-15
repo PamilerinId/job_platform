@@ -38,6 +38,7 @@ async def fetch_jobs(current_user: Annotated[BaseUser, Depends(get_current_user)
         if search:
             jobs_query.filter(
             Job.tags.contains([search]))
+        jobs_query.order_by(Job.deadline.desc())
     # if user is client; filter by company jobs
     # elif(current_user.user.role == UserType.CLIENT):
     elif(current_user.role == UserType.CLIENT.value):
