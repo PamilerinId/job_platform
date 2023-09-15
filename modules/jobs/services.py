@@ -70,9 +70,9 @@ async def fetch_recommended_jobs(current_user: Annotated[BaseUser, Depends(get_c
     jobs_query = db.query(Job).options(joinedload(Job.company))
     if current_user.candidate_profile:
         jobs_query.filter(
-            Job.tags.contains([current_user.candidate_profile.skills])).order_by(Job.deadline.desc())
+            Job.tags.contains([current_user.candidate_profile.skills]))
     
-    jobs = jobs_query.limit(5).all()
+    jobs = jobs_query.order_by(Job.deadline.desc()).limit(5).all()
     if len(jobs) < 1: 
         raise NotFoundException('No Jobs found')
     return {'message': 'Jobs retrieved successfully', 'count': len(jobs), 'data': jobs}
