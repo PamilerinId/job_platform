@@ -71,9 +71,7 @@ async def fetch_recommended_jobs(current_user: Annotated[BaseUser, Depends(get_c
     jobs_query = db.query(Job).options(joinedload(Job.company))
     if current_user.candidate_profile:
         jobs_query.filter(
-            Job.tags.contains([current_user.candidate_profile.skills]))
-    # if user is client; filter by company jobs
-    # elif(current_user.user.role == UserType.CLIENT):
+            Job.tags.contains([current_user.candidate_profile.skills])).order_by(Job.deadline.desc())
     
     jobs = jobs_query.limit(5).all()
     if len(jobs) < 1: 
