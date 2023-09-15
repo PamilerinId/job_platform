@@ -31,7 +31,6 @@ async def fetch_jobs(current_user: Annotated[BaseUser, Depends(get_current_user)
                      limit: int = 10, page: int = 1, search: str = ''):
     
     skip = (page - 1) * limit
-
     # if user is candidate; get industry related tags
     if (current_user.role == UserType.CANDIDATE):
         jobs_query = db.query(Job).options(
@@ -41,13 +40,18 @@ async def fetch_jobs(current_user: Annotated[BaseUser, Depends(get_current_user)
             Job.tags.contains([search]))
     # if user is client; filter by company jobs
     # elif(current_user.user.role == UserType.CLIENT):
-    elif(current_user.role == UserType.CLIENT):
-        # company = db.query(Company).filter(Company.owner_id == str(current_user.id)).first()
+    elif(current_user.role == UserType.CLIENT.value):
+        # print('HEERE', current_user.client_profile.company, flush=True)
+        company = db.query(Company).options(
+                joinedload(Company.profile)).filter(Company.owner_id == str(current_user.id)).first()
+        if company:
+            current_user.client_profile.company = company
         if current_user.client_profile and current_user.client_profile.company:
+            # print('HEERE2', current_user.client_profile.company,  flush=True)
             jobs_query = db.query(Job).options(
                 joinedload(Job.company)
                 .joinedload(Company.profile)).filter(
-                Job.company_id == current_user.client_profile.company.id)
+                Job.company_id == current_user.client_profile.company.id).order_by(Job.created_at.desc())
         else:
             return {'message': 'You have created no Jobs'}
             # raise NotFoundException('You have created no Jobs')
