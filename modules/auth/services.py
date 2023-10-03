@@ -1,5 +1,6 @@
 from datetime import timedelta
 from typing import Annotated
+from modules.jobs.models import Job
 from pydantic import TypeAdapter
 
 from fastapi import Request
@@ -258,15 +259,32 @@ async def confirm_email():
 
 def onboarding_checker(current_user: BaseUser, db):
     # get full user profile
-    user = db.query(User).filter(User.email == current_user.email)
-    new_user = user.first()
+    # user = db.query(User).filter(User.email == current_user.email)
+    # new_user = user.first()
 
-    if user is None:
-        raise UserNotFoundException
+    # if user is None:
+    #     raise UserNotFoundException
     
     # check db values and update
     # email verification
-    onboarding_status = Onboarding(verify_email=new_user.email_verified)
+    onboarding_status = Onboarding(verify_email=True if current_user.email else False) #bull
+    onboarding_status.photo_uploaded = True if current_user.photo != None else False
+    if current_user.first_name and current_user.last_name and current_user.photo:
+        onboarding_status.profile_complete = True
+
+    if current_user.role == UserType.CANDIDATE and current_user.candidate_profile.cv:
+        onboarding_status.cv_uploaded = True
+
+    if current_user.role == UserType.CLIENT and current_user.client_profile:
+        if current_user.client_profile.company:
+            onboarding_status.company_profile_complete = True
+            jobs = db.query(Job).options(
+                        joinedload(Job.company)
+                        .joinedload(Company.profile)).filter(
+                        Job.company_id == current_user.client_profile.company.id).limit(1).offset(0).all()
+            
+            if len(jobs) > 1: 
+                onboarding_status.post_first_job = True
     # client profile checks
     # candidate profile checks
 
