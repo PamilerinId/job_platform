@@ -5,6 +5,7 @@ from modules.auth.services import router as auth_router
 from modules.users.services import router as user_router
 from modules.jobs.services import router as jobs_router
 from modules.files.services import router as files_router
+from modules.assessments.services import router as assessment_router
 
 router = APIRouter(
      prefix="/api/v1"
@@ -25,6 +26,7 @@ router.include_router(user_router)
 router.include_router(auth_router)
 router.include_router(jobs_router)
 router.include_router(files_router)
+router.include_router(assessment_router)
 
 
 __all__ = ["router"]
