@@ -47,6 +47,7 @@ class Company(Base):
     jobs = relationship(
             "Job",
             back_populates="company")
+            
 
     # Audit logs
     created_at = Column(TIMESTAMP(timezone=True),
