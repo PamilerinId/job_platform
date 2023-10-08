@@ -25,6 +25,8 @@ assessmentRepo = AssessmentRepository()
 # fetch and update delete results
 @router.post('/', response_model=CustomResponse[BaseAssessment], tags=["Assessment"])
 async def create_assessments():
+
+
     pass
 
 @router.get('/', response_model=CustomListResponse[BaseAssessment], tags=["Assessment"])
@@ -43,15 +45,25 @@ async def fetch_assessment(assessment_id: Annotated[UUID, Path(title="")],):
     return {"message":"Assessment fetched successfully","data": assessment}
 
 @router.put('/{assessment_id}', response_model=CustomResponse[BaseAssessment], tags=["Assessment"])
-async def update_assessments():
-    pass
+async def update_assessments(assessment_id: Annotated[UUID, Path(title="ID of assessment being fetched")],
+                             payload: BaseAssessment):
+    assessment = await assessmentRepo.update(payload)
+
+    return {"message":"Assessment fetched successfully","data": assessment}
 
 
 @router.delete('/{assessment_id}', response_model=CustomResponse, tags=["Assessment"])
 async def delete_assessments(assessment_id: Annotated[UUID, Path(title="The ID of the assessment to be deleted")],
                current_user: Annotated[BaseUser, Depends(get_current_user)],):
-    assessment = assessmentRepo.delete(assessment_id)
+    assessment = await assessmentRepo.delete(assessment_id)
     return assessment
+
+@router.put('/{assessment_id}/questions', response_model=CustomResponse[BaseAssessment], tags=["Assessment"])
+async def add_assessment_questions(assessment_id: Annotated[UUID, Path(title="ID of assessment being fetched")],
+                             payload: BaseAssessment):
+    assessment = await assessmentRepo.update(payload)
+
+    return {"message":"Assessment fetched successfully","data": assessment}
 
 
 @router.get('/results/{assessment_id}', response_model=CustomListResponse[BaseUserResults], tags=["Assessment"])

@@ -22,7 +22,7 @@ class AssessmentRepository:
         if payload.id:
             assessment = self.db.query(Assessment).filter(Assessment.id==payload.id).first()
             if assessment is None:
-                raise NotFoundException("Assessment not found!")
+                raise NotFoundException("No assessment not found!")
         else:
             assessment = Assessment(**payload.__dict__)
 
@@ -43,7 +43,7 @@ class AssessmentRepository:
         return assessment
 
     
-    async def get(self, assessment_id: str):
+    async def get_by_id(self, assessment_id: str):
         assessment = self.db.query(Assessment).filter(Assessment.id==assessment_id).first()
         if assessment is None:
             raise NotFoundException("Assessment not found!")

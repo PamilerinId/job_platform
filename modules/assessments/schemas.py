@@ -5,17 +5,12 @@ from modules.assessments.models import AssessmentDifficulty, QuestionDifficulty,
 from pydantic import field_validator, ConfigDict, BaseModel, Field, EmailStr, constr, HttpUrl, Json
 
 
-class BaseAssessment(BaseModel):
+class BaseAnswer(BaseModel):
     id: Optional[UUID] = None
-    name: Optional[str] = None
-    slug: Optional[str]= None
-    description: Optional[str] = None
-    instruction: Optional[str] = None
-    difficulty: Optional[AssessmentDifficulty]
-    tags: Optional[List[str]] = None
-    skills: Optional[List[str]] = None
-    duration: Optional[str] = None
-    model_config = ConfigDict(from_attributes=True)
+    question_id: Optional[UUID] = None
+    answer_text: Optional[str] = None
+    boolean_text: Optional[bool] = None
+    feedback: Optional[str] = None
 
 
 class BaseQuestion(BaseModel):
@@ -26,18 +21,25 @@ class BaseQuestion(BaseModel):
     question_type: Optional[QuestionType] = None
     difficulty: Optional[QuestionDifficulty]
     options: Optional[List[str]] = None
-    correctAnswerId: Optional[UUID] = None
-    answer_ids: Optional[List[UUID]] = None
+    answers: Optional[List[BaseAnswer]] = None
     tags: Optional[List[str]] = None
     model_config = ConfigDict(from_attributes=True)
 
 
-class BaseAnswer(BaseModel):
+class BaseAssessment(BaseModel):
     id: Optional[UUID] = None
-    question_id: Optional[UUID] = None
-    answer_text: Optional[str] = None
-    boolean_text: Optional[bool] = None
-    feedback: Optional[str] = None
+    name: Optional[str] = None
+    slug: Optional[str]= None
+    description: Optional[str] = None
+    instruction: Optional[str] = None
+    difficulty: Optional[AssessmentDifficulty]
+    tags: Optional[List[str]] = None
+    skills: Optional[List[str]] = None
+    duration: Optional[str] = None
+    questions: List[BaseQuestion] = None
+    model_config = ConfigDict(from_attributes=True)
+
+
 
 class BaseUserResults(BaseModel):
     id: Optional[UUID] = None
