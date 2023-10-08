@@ -1,9 +1,9 @@
 from pydantic import constr, BaseModel, Field, EmailStr
-from modules.users.schemas import CreateUser
+from modules.users.schemas import RegisterUser
 from typing_extensions import Annotated
 
 
-class RegisterUserSchema(CreateUser):
+class RegisterUserSchema(RegisterUser):
     password: Annotated[str, constr(min_length=8)]
 
 

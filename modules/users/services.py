@@ -1,7 +1,9 @@
 from datetime import datetime
 import secrets
 from typing import Annotated, List, Optional
+from core.exceptions.auth import DuplicateEmailException
 from core.exceptions.base import BadRequestException
+from core.helpers import password
 from pydantic import parse_obj_as
 from uuid import UUID
 from slugify import slugify
@@ -15,12 +17,69 @@ from core.exceptions import DuplicateCompanyException, UnauthorisedUserException
 from core.helpers.schemas import CustomListResponse, CustomResponse
 
 from .models import CandidateProfile, ClientProfile, Company, CompanyProfile, User, UserType
-from .schemas import BaseUser, BaseCompany, CreateCompanySchema, UpdateCompanySchema, UpdateUserProfile
+from .schemas import BaseUser, BaseCompany, CreateCompanySchema, CreateUser, UpdateCompanySchema, UpdateUserProfile
 
 router = APIRouter(
     prefix="/users",
 )
 
+# ADMIN Routes
+@router.post('/', response_model=CustomResponse[BaseUser], tags=["User"])
+async def create_user(payload: CreateUser,
+    current_user: Annotated[BaseUser, Depends(get_current_user)],
+                  db: Session = Depends(get_db)):
+    
+    if current_user.role != UserType.ADMIN:
+        raise UnauthorisedUserException("User is not authorised to access this view")
+    
+    user = db.query(User).filter(User.email == payload.email.lower()).first()
+    if user:
+        raise DuplicateEmailException
+    #  Hash the password
+    payload.password = password.hash_password(payload.password)
+    new_user = User(**payload.dict())
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    # update related models
+    if payload.role == UserType.CANDIDATE:
+        new_candidate_profile = CandidateProfile(user_id=new_user.id)
+        new_candidate_profile.updated_at = datetime.now()
+        db.add(new_candidate_profile)
+    elif payload.role == UserType.CLIENT:
+        new_client_profile = ClientProfile(user_id=new_user.id)
+        new_client_profile.updated_at = datetime.now()
+        db.add(new_client_profile)
+
+    db.commit()
+    
+    return {'message': 'User created successfully', 'data': new_user}
+
+@router.get('/clients', response_model=CustomListResponse[BaseUser], tags=["User"])
+async def fetch_clients(current_user: Annotated[BaseUser, Depends(get_current_user)],
+                  db: Session = Depends(get_db)):#, user_id: str = Depends(require_user)):
+    
+    if current_user.role != UserType.ADMIN:
+        raise UnauthorisedUserException("User is not authorised to access this view")
+    
+    users = db.query(User).options(
+                joinedload(User.client_profile)
+                .joinedload(ClientProfile.company)).filter(User.role == UserType.CLIENT).all()
+    return {'message': 'Client list retrieved successfully', 'count': len(users),'data': users}
+
+@router.get('/candidates', response_model=CustomListResponse[BaseUser], tags=["User"])
+async def fetch_candidates(current_user: Annotated[BaseUser, Depends(get_current_user)],
+                     db: Session = Depends(get_db)):#, user_id: str = Depends(require_user)):
+    
+    if current_user.role != UserType.ADMIN:
+        raise UnauthorisedUserException("User is not authorised to access this view")
+    
+    users = db.query(User).options(
+                joinedload(User.candidate_profile)).filter(User.role == UserType.CANDIDATE).all()
+    return {'message': 'Candidate list retrieved successfully', 'count': len(users),'data': users}
+
+
+# ##################################
 @router.get("/companies", response_model=CustomListResponse[BaseCompany], tags=["Companies"])
 async def fetch_companies(db: Session = Depends(get_db), limit: int = 10, page: int = 1, search: str = ''):#, user_id: str = Depends(require_user)):
     skip = (page - 1) * limit
@@ -65,7 +124,7 @@ async def create_company(payload: CreateCompanySchema,
     # Check that the client is a valid user and has role of CLIENT
     user = db.query(User).filter(User.id == current_user.id)
 
-    if current_user.role != UserType.CLIENT:
+    if current_user.role == UserType.CANDIDATE:
         raise UnauthorisedUserException("You are not authorized to create company profiles")
     
     new_company = Company(**payload.dict())
@@ -191,19 +250,6 @@ async def delete_job(company_id: Annotated[UUID, Path(title="The ID of the compa
     except BadRequestException:
         db.rollback()
         raise BadRequestException("Company delete failed")
-
-
-# ADMIN Routes
-@router.get('/clients', response_model=CustomListResponse[BaseUser], tags=["User"])
-def fetch_clients(db: Session = Depends(get_db)):#, user_id: str = Depends(require_user)):
-    users = db.query(User).filter(User.role == UserType.CLIENT).all()
-    return {'message': 'Client list retrieved successfully', 'count': len(users),'data': users}
-
-@router.get('/candidates', response_model=BaseUser, tags=["User"])
-def fetch_candidates(db: Session = Depends(get_db)):#, user_id: str = Depends(require_user)):
-    users = db.query(User).filter(User.role == UserType.CANDIDATE).all()
-    return {'message': 'Candidate list retrieved successfully', 'count': len(users),'data': users}
-
 # TODO: 
 # CRUD Users
 # - Candidates profile
