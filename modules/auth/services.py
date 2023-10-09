@@ -207,6 +207,52 @@ async def login_via_google(request: Request,token:str,
   
     except ValueError: 
         raise UserNotFoundException
+    
+@router.post("/login/admin/google", response_model=CustomResponse[AuthUser], 
+             status_code=status.HTTP_200_OK)
+async def admin_login_via_google(request: Request,token:str,
+                           db: Session = Depends(get_db)):
+    # verify token google
+    # fetch user profile from google
+    try: 
+        # Specify the CLIENT_ID of the app that accesses the backend: 
+        user = id_token.verify_oauth2_token(token, requests.Request(), config.GOOGLE_CLIENT_ID) 
+        print(user, flush=True)
+        request.session['user'] = dict({ 
+            "email" : user['email'] 
+        })
+
+        # check if user is distinct email
+        if user['email'].split('@')[1] != 'distinct.ai': #config.domain_name
+            raise UnauthorisedUserException('You are not authorised to access the page')
+
+        # Check if the user exist
+        user_object = db.query(User).filter(
+            User.email == user['email'].lower()).first()
+
+        if not user_object:
+            # register user
+            new_user = User(first_name=user['given_name'],
+                            last_name=user['family_name'],
+                            email=user['email'], 
+                            photo=user['picture'], 
+                            password='p@ss!234_')
+            new_user.role = UserType.ADMIN
+            db.add(new_user)
+            db.commit()
+            db.refresh(new_user)
+            # TODO: Generate confirm email OTP and Send Welcome email
+            data =  { **jsonable_encoder(BaseUser.from_orm(new_user)), 
+                    "token":TokenHelper.encode(jsonable_encoder(BaseUser.from_orm(new_user)))}
+        else:
+            data =  { **jsonable_encoder(BaseUser.from_orm(user_object)), 
+                    "token":TokenHelper.encode(jsonable_encoder(BaseUser.from_orm(user_object)))}
+
+        
+        return {"message":"User logged in successfully","data": data} 
+  
+    except ValueError: 
+        raise UnauthorisedUserException
 
 
 @router.get('/logout', status_code=status.HTTP_200_OK)
