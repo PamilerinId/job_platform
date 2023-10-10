@@ -44,6 +44,7 @@ class Assessment(Base):
     description = Column(Text,  nullable=False)
     instructions = Column(Text,  nullable=False)
     difficulty = Column(Enum(AssessmentDifficulty))
+    questions = relationship('Question', back_populates='assessment')
 
     tags = Column(ARRAY(Text), nullable=False, default=cast(array([], type_=Text), ARRAY(Text)))
     __table_args__ = (Index('ix_assessments_tags', tags, postgresql_using="gin"), )
@@ -73,9 +74,8 @@ class Question(Base):
 
     title = Column(String, nullable=False)
     options = Column(ARRAY(String), nullable=True)
-    correctAnswerId = Column(UUID(), ForeignKey('answers.id'))
-    answer_ids = Column(ARRAY(UUID()), nullable=False)
-    # answers = relationship("Answer")
+    assessment = relationship('Assessment', back_populates='questions')
+    answers = relationship('Answer', back_populates='question')
 
     tags = Column(ARRAY(Text), nullable=False, default=cast(array([], type_=Text), ARRAY(Text)))
     __table_args__ = (Index('ix_questions_tags', tags, postgresql_using="gin"), )
@@ -97,8 +97,10 @@ class Answer(Base):
     question_id = Column(UUID(), ForeignKey('questions.id'), index=True,)
     answer_text = Column(String, nullable=True)
     boolean_text = Column(Boolean, nullable=True)
+    is_correct = Column(Boolean)
     feedback = Column(Text,  nullable=False)
-    # questions = relationship("Question")
+
+    question = relationship('Question', back_populates='answers')
 
     
     # Audit logs
@@ -109,6 +111,14 @@ class Answer(Base):
     
     def __repr__(self):
         return f"<Answer {self.title}>"
+    
+
+class JobAssessment(Base):
+    __tablename__ = 'job_assessments'
+    id = Column(UUID(as_uuid=True), primary_key=True, nullable=False,
+                default=uuid.uuid4)
+    assessment_id = Column(UUID(), ForeignKey('assessments.id'), index=True,)
+    job_id =  Column(UUID(), ForeignKey('jobs.id'), index=True,)
 
 
 class UserResult(Base):

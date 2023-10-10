@@ -1,6 +1,6 @@
 from uuid import UUID
 from datetime import datetime
-from typing import Any, List, Optional
+from typing import Annotated, Any, List, Optional
 from pydantic import field_validator, ConfigDict, BaseModel, Field, EmailStr, constr, HttpUrl
 
 
@@ -105,12 +105,17 @@ class UpdateUserProfile(BaseModel):
     candidate_profile: Optional[BaseCandidate] = None
     model_config = ConfigDict(from_attributes=True, validate_assignment=True)
 
-class CreateUser(BaseModel):
+
+class RegisterUser(BaseModel):
     email: EmailStr = Field(None, description="email")
     first_name: str = Field(None, description="First Name")
     last_name: str = Field(None, description="Last Name")
     model_config = ConfigDict(from_attributes=True, validate_assignment=True)
-    
+
+class CreateUser(RegisterUser):
+    role: UserType = None
+    password: Annotated[str, constr(min_length=8)]
+    model_config = ConfigDict(from_attributes=True, validate_assignment=True)
 
 class AuthUser(BaseUser):
     token_type: str = "bearer"
