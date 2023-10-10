@@ -1,5 +1,4 @@
-
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 
 from fastapi import Depends
@@ -44,7 +43,8 @@ class AssessmentRepository:
 
     
     async def get_by_id(self, assessment_id: str):
-        assessment = self.db.query(Assessment).filter(Assessment.id==assessment_id).first()
+        assessment = self.db.query(Assessment).options(joinedload(Assessment.questions)
+                                                       .joinedload(Question.answers)).filter(Assessment.id==assessment_id).first()
         if assessment is None:
             raise NotFoundException("Assessment not found!")
         
@@ -105,14 +105,20 @@ class QuestionRepository:
     def __init__(self) -> None:
         self.db: Session = get_db().__next__()
 
-    async def create(self, payload: BaseQuestion):
+    async def create(self, payload: BaseQuestion, assessment_id: str):
         question = Question(**payload.__dict__)
-
+        question.assessment_id = assessment_id
         self.db.add(question)
         self.db.commit()
         self.db.refresh(question)
 
         return question
+    
+    async def create_with_answers(self, payload:BaseQuestion, assessment_id: str):
+        new_question = await self.create(payload, assessment_id)  # Create the base question first
+        for answer in payload.answers:
+            await AnswerRepository().create(answer)
+        return new_question 
 
 
     async def get(self, question_id: str):

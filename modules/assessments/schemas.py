@@ -10,6 +10,7 @@ class BaseAnswer(BaseModel):
     question_id: Optional[UUID] = None
     answer_text: Optional[str] = None
     boolean_text: Optional[bool] = None
+    is_correct: Optional[bool] = None
     feedback: Optional[str] = None
 
 
@@ -20,7 +21,7 @@ class BaseQuestion(BaseModel):
     assessment_id: Optional[UUID]= None
     question_type: Optional[QuestionType] = None
     difficulty: Optional[QuestionDifficulty]
-    options: Optional[List[str]] = None
+    # options: Optional[List[str]] = None
     answers: Optional[List[BaseAnswer]] = None
     tags: Optional[List[str]] = None
     model_config = ConfigDict(from_attributes=True)
