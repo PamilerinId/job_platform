@@ -2,7 +2,6 @@ from datetime import timedelta
 from typing import Annotated
 from modules.jobs.models import Job
 from pydantic import TypeAdapter
-
 from fastapi import Request
 from fastapi import Depends, HTTPException, status, APIRouter, Response, Path
 from fastapi.security import OAuth2PasswordRequestForm
@@ -17,9 +16,10 @@ from google.auth.transport import requests
 from core.dependencies.sessions import get_db
 from core.dependencies.auth import TokenHelper, get_current_user, custom_oauth
 from core.helpers import password
-from core.helpers.schemas import CustomResponse
+from core.helpers.schemas import CustomResponse, CandidateWelcomeEmail, ClientWelcomeEmail, PasswordResetEmail
 from core.env import config
 from core.exceptions import *
+from core.helpers.mail_utils import *
 
 from modules.auth.schemas import LoginUserSchema, PasswordChangeSchema, PasswordResetRequestSchema, RegisterUserSchema
 from modules.users.models import CandidateProfile, ClientProfile, Company, User
@@ -89,6 +89,11 @@ async def create_candidate(payload: RegisterUserSchema, db: Session = Depends(ge
     db.add(new_candidate_profile)
     db.commit()
     # TODO: Generate confirm email OTP and Send Welcome email
+    
+    #Send welcome email
+    email_payload = CandidateWelcomeEmail(first_name = payload.first_name)
+    mail_notify(payload.email, CANDIDATE_WELCOME_MAIL, email_payload)
+    
     data =  { **jsonable_encoder(BaseUser.from_orm(new_user)), 
             "token":TokenHelper.encode(jsonable_encoder(BaseUser.from_orm(new_user)))}
     
@@ -115,6 +120,8 @@ async def create_client(payload: RegisterUserSchema, db: Session = Depends(get_d
     payload.email = payload.email.lower()
     new_user = User(**payload.dict())
     new_user.role = UserType.CLIENT
+    
+    
     # TODO: Refactor to repository
     db.add(new_user)
     db.commit()
@@ -125,6 +132,12 @@ async def create_client(payload: RegisterUserSchema, db: Session = Depends(get_d
     db.add(new_client_profile)
     db.commit()
     #TODO: Generate confirm email OTP and Send Welcome email
+    
+    #Send welcome email
+    email_payload = ClientWelcomeEmail(first_name = payload.first_name)
+    mail_notify(payload.email, CLIENT_WELCOME_MAIL, email_payload)
+    
+    
     data =  { **jsonable_encoder(BaseUser.from_orm(new_user)), 
             "token":TokenHelper.encode(jsonable_encoder(BaseUser.from_orm(new_user)))}
     
@@ -154,7 +167,7 @@ def login(payload: LoginUserSchema, db: Session = Depends(get_db)):
     # Check if the password is valid
     if not password.verify_password(payload.password, user.password):
         raise PasswordDoesNotMatchException
-
+    
     data =  { **jsonable_encoder(BaseUser.from_orm(user)), 
             "token":TokenHelper.encode(jsonable_encoder(BaseUser.from_orm(user)))}
     
@@ -272,6 +285,11 @@ async def password_reset_request(payload: PasswordResetRequestSchema,
         raise UserNotFoundException
     
     # Generate token and TODO: send mail
+    
+    #Send mail
+    email_payload = PasswordResetEmail(first_name = user.first_name)
+    mail_notify(payload.email, PASSWORD_RESET_MAIL, email_payload)
+    
     data =  {"token":TokenHelper.encode({"id": str(user.id), "email": user.email}, 900)}
     
     return  {"message": "Password reset requested successfully", "data":data}

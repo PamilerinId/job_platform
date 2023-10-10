@@ -7,9 +7,9 @@ from core.env import config
 SENDER_MAIL = "hello@distinct.ai"
 API_KEY = config.POSTMARK_API_KEY
 
-class MailTemplate(Enum.enum):
-    CANDIDATE_WELCOME = 32648890
-    CLIENT_WELCOME = 32648890
+# class MailTemplate(Enum.enum): 
+#    CANDIDATE_WELCOME = 32648890
+#     CLIENT_WELCOME = 32648890
 
 class EmailSender:
     @staticmethod
@@ -22,4 +22,6 @@ class EmailSender:
                         template_model=payload.template_values)
             pm.send()
         except: 
-            raise PMMailSendException
+            raise PMMailSendException(Exception)
+        
+    
