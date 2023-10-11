@@ -8,6 +8,8 @@ from pydantic import parse_obj_as
 from uuid import UUID
 from slugify import slugify
 
+from sqlalchemy import or_
+
 from fastapi import Depends, HTTPException, status, APIRouter, Response, Path
 from sqlalchemy.orm import Session, joinedload
 
@@ -80,7 +82,11 @@ async def fetch_clients(current_user: Annotated[BaseUser, Depends(get_current_us
     skip = (page - 1) * limit
     users = db.query(User).options(
                 joinedload(User.client_profile)
-                .joinedload(ClientProfile.company)).filter(User.role == UserType.CLIENT).limit(limit).offset(skip).all()
+                .joinedload(ClientProfile.company))
+    if search:
+        users_query = users_query.filter(or_(User.first_name.like(f"%{search}%"), User.last_name.like(f"%{search}%"), 
+                                             ))
+    users = users_query.filter(User.role == UserType.CLIENT).limit(limit).offset(skip).all()
     return {'message': 'Client list retrieved successfully', 'count': len(users),'data': users}
 
 
@@ -93,8 +99,12 @@ async def fetch_candidates(current_user: Annotated[BaseUser, Depends(get_current
         raise UnauthorisedUserException("User is not authorised to access this view")
     
     skip = (page - 1) * limit
-    users = db.query(User).options(
-                joinedload(User.candidate_profile)).filter(User.role == UserType.CANDIDATE).limit(limit).offset(skip).all()
+    users_query = db.query(User).options(
+                joinedload(User.candidate_profile))
+    if search:
+        users_query = users_query.filter(or_(User.first_name.like(f"%{search}%"), User.last_name.like(f"%{search}%"), 
+                                            ))
+    users = users_query.filter(User.role == UserType.CANDIDATE).limit(limit).offset(skip).all()
     return {'message': 'Candidate list retrieved successfully', 'count': len(users),'data': users}
 
 
@@ -375,7 +385,7 @@ async def admin_update_user_profile(
 
 # Admin Use
 @router.delete('/{company_id}', response_model=CustomResponse, tags=["Companies"])
-async def delete_job(company_id: Annotated[UUID, Path(title="The ID of the company to be deleted")],
+async def delete_company(company_id: Annotated[UUID, Path(title="The ID of the company to be deleted")],
                current_user: Annotated[BaseUser, Depends(get_current_user)],
                db: Session = Depends(get_db),):
     
