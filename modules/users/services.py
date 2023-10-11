@@ -8,6 +8,8 @@ from pydantic import parse_obj_as
 from uuid import UUID
 from slugify import slugify
 
+from sqlalchemy import or_
+
 from fastapi import Depends, HTTPException, status, APIRouter, Response, Path
 from sqlalchemy.orm import Session, joinedload
 
@@ -55,29 +57,112 @@ async def create_user(payload: CreateUser,
     
     return {'message': 'User created successfully', 'data': new_user}
 
-@router.get('/clients', response_model=CustomListResponse[BaseUser], tags=["User"])
-async def fetch_clients(current_user: Annotated[BaseUser, Depends(get_current_user)],
-                  db: Session = Depends(get_db)):#, user_id: str = Depends(require_user)):
+
+@router.get('/admin', response_model=CustomListResponse[BaseUser], tags=["User"])
+async def fetch_admin(current_user: Annotated[BaseUser, Depends(get_current_user)],
+                  db: Session = Depends(get_db), 
+                  limit: int = 10, page: int = 1, search: str = ''):#, user_id: str = Depends(require_user)):
     
     if current_user.role != UserType.ADMIN:
         raise UnauthorisedUserException("User is not authorised to access this view")
     
+    skip = (page - 1) * limit
+    users = db.query(User).filter(User.role == UserType.ADMIN).limit(limit).offset(skip).all()
+    return {'message': 'Admin list retrieved successfully', 'count': len(users),'data': users}
+
+
+@router.get('/clients', response_model=CustomListResponse[BaseUser], tags=["User"])
+async def fetch_clients(current_user: Annotated[BaseUser, Depends(get_current_user)],
+                  db: Session = Depends(get_db), 
+                  limit: int = 10, page: int = 1, search: str = ''):#, user_id: str = Depends(require_user)):
+    
+    if current_user.role != UserType.ADMIN:
+        raise UnauthorisedUserException("User is not authorised to access this view")
+    
+    skip = (page - 1) * limit
     users = db.query(User).options(
                 joinedload(User.client_profile)
-                .joinedload(ClientProfile.company)).filter(User.role == UserType.CLIENT).all()
+                .joinedload(ClientProfile.company))
+    if search:
+        users_query = users_query.filter(or_(User.first_name.like(f"%{search}%"), User.last_name.like(f"%{search}%"), 
+                                             ))
+    users = users_query.filter(User.role == UserType.CLIENT).limit(limit).offset(skip).all()
     return {'message': 'Client list retrieved successfully', 'count': len(users),'data': users}
+
 
 @router.get('/candidates', response_model=CustomListResponse[BaseUser], tags=["User"])
 async def fetch_candidates(current_user: Annotated[BaseUser, Depends(get_current_user)],
-                     db: Session = Depends(get_db)):#, user_id: str = Depends(require_user)):
+                     db: Session = Depends(get_db), 
+                  limit: int = 10, page: int = 1, search: str = ''):#, user_id: str = Depends(require_user)):
     
     if current_user.role != UserType.ADMIN:
         raise UnauthorisedUserException("User is not authorised to access this view")
     
-    users = db.query(User).options(
-                joinedload(User.candidate_profile)).filter(User.role == UserType.CANDIDATE).all()
+    skip = (page - 1) * limit
+    users_query = db.query(User).options(
+                joinedload(User.candidate_profile))
+    if search:
+        users_query = users_query.filter(or_(User.first_name.like(f"%{search}%"), User.last_name.like(f"%{search}%"), 
+                                            ))
+    users = users_query.filter(User.role == UserType.CANDIDATE).limit(limit).offset(skip).all()
     return {'message': 'Candidate list retrieved successfully', 'count': len(users),'data': users}
 
+
+
+@router.get("/admin/{user_id}", response_model=CustomResponse[BaseUser], tags=["User"])
+async def fetch_admin_details(
+    current_user: Annotated[BaseUser, Depends(get_current_user)],
+    user_id: Annotated[UUID, Path(title="The ID of the User to be retrieved")],
+    db: Session = Depends(get_db)):#, user_id: str = Depends(require_user)):
+
+    if current_user.role != UserType.ADMIN:
+        raise UnauthorisedUserException("User is not authorised to access this view")
+
+    user = db.query(User).filter(User.id == user_id).first()
+    
+    if user is None:
+        raise NotFoundException("User not found!")
+    
+
+    return {'message': 'User details retrieved successfully', 'data': user}
+
+
+@router.get("/candidate/{user_id}", response_model=CustomResponse[BaseUser], tags=["User"])
+async def fetch_candidate_details(
+    current_user: Annotated[BaseUser, Depends(get_current_user)],
+    user_id: Annotated[UUID, Path(title="The ID of the User to be retrieved")],
+    db: Session = Depends(get_db)):#, user_id: str = Depends(require_user)):
+
+    if current_user.role != UserType.ADMIN:
+        raise UnauthorisedUserException("User is not authorised to access this view")
+
+    user = db.query(User).options(
+                joinedload(User.candidate_profile)).filter(User.id == user_id).first()
+    
+    if user is None:
+        raise NotFoundException("User not found!")
+    
+
+    return {'message': 'User details retrieved successfully', 'data': user}
+
+@router.get("/client/{user_id}", response_model=CustomResponse[BaseUser], tags=["User"])
+async def fetch_client_details(
+    current_user: Annotated[BaseUser, Depends(get_current_user)],
+    user_id: Annotated[UUID, Path(title="The ID of the User to be retrieved")],
+    db: Session = Depends(get_db)):#, user_id: str = Depends(require_user)):
+
+    if current_user.role != UserType.ADMIN:
+        raise UnauthorisedUserException("User is not authorised to access this view")
+
+    user = db.query(User).options(
+                joinedload(User.client_profile)
+                .joinedload(ClientProfile.company)).filter(User.id == user_id).first()
+    
+    if user is None:
+        raise NotFoundException("User not found!")
+    
+
+    return {'message': 'User detals retrieved successfully', 'data': user}
 
 # ##################################
 @router.get("/companies", response_model=CustomListResponse[BaseCompany], tags=["Companies"])
@@ -230,9 +315,77 @@ async def update_user_profile(payload: Optional[UpdateUserProfile],
     
     return {"message":"User profile updated successfully","data": user}
 
+
+@router.patch('/profile/{user_id}', response_model=CustomResponse[BaseUser],
+            #   response_model_exclude_none=True, 
+              tags=["User"])
+async def admin_update_user_profile(
+    user_id: Annotated[UUID, Path(title="The ID of the job to be updated")],
+    payload: Optional[UpdateUserProfile],
+               current_user: Annotated[BaseUser, Depends(get_current_user)],
+               db: Session = Depends(get_db),):
+    
+    if current_user.role != UserType.ADMIN:
+        raise UnauthorisedUserException("User is not authorised to access this view")
+    
+    user_query = db.query(User)
+
+    user_object = user_query.filter(User.id == user_id).first()
+
+    if user_object is None:
+        raise NotFoundException("User not found!")
+    
+    if user_object.role == UserType.CANDIDATE:
+        user = user_query.options(joinedload(User.candidate_profile)).filter(User.id == user_object.id).first()
+        candidate_query = db.query(CandidateProfile).filter(CandidateProfile.user_id == user_object.id)
+        candidate = candidate_query.first()
+        
+        if candidate is None and payload.candidate_profile == None:
+            new_profile = CandidateProfile(user_id = user_object.id, updated_at = datetime.now())
+            db.add(new_profile)
+        elif candidate is None and payload.candidate_profile != None:
+            new_profile = CandidateProfile(**payload.candidate_profile.dict())
+            new_profile.user_id = user_object.id
+            new_profile.updated_at = datetime.now()
+            db.add(new_profile)
+        elif candidate is not None and payload.candidate_profile != None:
+            candidate_query.update(payload.candidate_profile.dict(exclude_unset=True))
+
+    elif user_object.role == UserType.CLIENT:
+        user = user_query.options(joinedload(User.client_profile)).filter(User.id == user_object.id).first()
+        client_query = db.query(ClientProfile).filter(ClientProfile.user_id == user_object.id)
+        client = client_query.first()
+
+        if client is None and payload.client_profile == None:
+            new_profile = ClientProfile(user_id = user_object.id, updated_at = datetime.now())
+            db.add(new_profile)
+        elif client is None and payload.client_profile != None:
+            new_profile = ClientProfile(**payload.client_profile.dict())
+            new_profile.user_id = user_object.id
+            new_profile.updated_at = datetime.now()
+            db.add(new_profile)
+        elif client is not None and payload.client_profile != None:
+            client_query.update(payload.client_profile.dict(exclude_unset=True))
+    
+
+    
+    # if user is None:
+    #     raise NotFoundException("User not found!")
+    if payload.first_name:
+        user.first_name = payload.first_name
+    if payload.last_name:
+        user.last_name=payload.last_name 
+    if payload.photo:
+        user.photo= payload.photo
+        
+    db.commit()
+    db.refresh(user)
+    
+    return {"message":"User profile updated successfully","data": user}
+
 # Admin Use
 @router.delete('/{company_id}', response_model=CustomResponse, tags=["Companies"])
-async def delete_job(company_id: Annotated[UUID, Path(title="The ID of the company to be deleted")],
+async def delete_company(company_id: Annotated[UUID, Path(title="The ID of the company to be deleted")],
                current_user: Annotated[BaseUser, Depends(get_current_user)],
                db: Session = Depends(get_db),):
     
