@@ -80,7 +80,7 @@ async def fetch_clients(current_user: Annotated[BaseUser, Depends(get_current_us
         raise UnauthorisedUserException("User is not authorised to access this view")
     
     skip = (page - 1) * limit
-    users = db.query(User).options(
+    users_query = db.query(User).options(
                 joinedload(User.client_profile)
                 .joinedload(ClientProfile.company))
     if search:
