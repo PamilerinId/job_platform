@@ -64,6 +64,7 @@ class UpdateCompanySchema(BaseModel):
     description: Optional[str] = None
     logo_url: Optional[str] = None
     profile: Optional[CompanyProfile] = None
+    client_id: Optional[UUID] = None
     model_config = ConfigDict(from_attributes=True)
 
 
