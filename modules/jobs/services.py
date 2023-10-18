@@ -121,7 +121,14 @@ def create_job(payload: CreateJobSchema,
     # TODO: update tags with field slugs
     if current_user.role == UserType.CANDIDATE:
         raise ForbiddenException("User not authorised to create jobs")
-    company = db.query(Company).filter(Company.owner_id == str(current_user.id)).first()
+    
+
+    if current_user.role == UserType.ADMIN:
+        company = db.query(Company).filter(Company.owner_id == str(payload.company_id)).first()
+    else:
+        company = db.query(Company).filter(Company.owner_id == str(current_user.id)).first()
+
+    # company = db.query(Company).filter(Company.owner_id == str(current_user.id)).first()
     if company is None:
         raise BadRequestException('Please complete company profile')
     title_slug = to_slug(payload.title)
@@ -148,7 +155,12 @@ def update_job(job_id: Annotated[UUID, Path(title="The ID of the job to be updat
                payload: UpdateJobSchema,
                current_user: Annotated[BaseUser, Depends(get_current_user)],
                db: Session = Depends(get_db),):
-    company = db.query(Company).filter(Company.owner_id == str(current_user.id)).first()
+    
+
+    if current_user.role == UserType.ADMIN:
+        company = db.query(Company).filter(Company.owner_id == str(payload.company_id)).first()
+    else:
+        company = db.query(Company).filter(Company.owner_id == str(current_user.id)).first()
     
     job_query = db.query(Job).options(
         joinedload(Job.company)
