@@ -67,8 +67,10 @@ async def fetch_admin(current_user: Annotated[BaseUser, Depends(get_current_user
         raise UnauthorisedUserException("User is not authorised to access this view")
     
     skip = (page - 1) * limit
-    users = db.query(User).filter(User.role == UserType.ADMIN).limit(limit).offset(skip).all()
-    return {'message': 'Admin list retrieved successfully', 'count': len(users),'data': users}
+    users_query = db.query(User).filter(User.role == UserType.ADMIN)
+    user_count = users_query.count()
+    users = users_query.limit(limit).offset(skip).all()
+    return {'message': 'Admin list retrieved successfully', 'total_count': user_count, 'count': len(users), 'next_page': page + 1,'data': users}
 
 
 @router.get('/clients', response_model=CustomListResponse[BaseUser], tags=["User"])
@@ -82,12 +84,13 @@ async def fetch_clients(current_user: Annotated[BaseUser, Depends(get_current_us
     skip = (page - 1) * limit
     users_query = db.query(User).options(
                 joinedload(User.client_profile)
-                .joinedload(ClientProfile.company))
+                .joinedload(ClientProfile.company)).filter(User.role == UserType.CLIENT)
     if search:
         users_query = users_query.filter(or_(User.first_name.like(f"%{search}%"), User.last_name.like(f"%{search}%"), 
                                              ))
-    users = users_query.filter(User.role == UserType.CLIENT).limit(limit).offset(skip).all()
-    return {'message': 'Client list retrieved successfully', 'count': len(users),'data': users}
+    user_count = users_query.count()
+    users = users_query.limit(limit).offset(skip).all()
+    return {'message': 'Client list retrieved successfully', 'total_count': user_count, 'count': len(users), 'next_page': page + 1,'data': users}
 
 
 @router.get('/candidates', response_model=CustomListResponse[BaseUser], tags=["User"])
@@ -100,12 +103,13 @@ async def fetch_candidates(current_user: Annotated[BaseUser, Depends(get_current
     
     skip = (page - 1) * limit
     users_query = db.query(User).options(
-                joinedload(User.candidate_profile))
+                joinedload(User.candidate_profile)).filter(User.role == UserType.CANDIDATE)
     if search:
         users_query = users_query.filter(or_(User.first_name.like(f"%{search}%"), User.last_name.like(f"%{search}%"), 
                                             ))
-    users = users_query.filter(User.role == UserType.CANDIDATE).limit(limit).offset(skip).all()
-    return {'message': 'Candidate list retrieved successfully', 'count': len(users),'data': users}
+    user_count = users_query.count()
+    users = users_query.limit(limit).offset(skip).all()
+    return {'message': 'Candidate list retrieved successfully', 'total_count': user_count, 'count': len(users), 'next_page': page + 1,'data': users}
 
 
 
@@ -170,11 +174,15 @@ async def fetch_companies(db: Session = Depends(get_db), limit: int = 10, page: 
     skip = (page - 1) * limit
 
     companies = db.query(Company).options(joinedload(Company.profile)).filter(
-        Company.name.contains(search)).limit(limit).offset(skip).all()
+        Company.name.contains(search))
     
-    if len(companies) < 1: 
+    company_count = companies.count()
+
+    companies_object = companies.limit(limit).offset(skip).all()
+    
+    if len(companies_object) < 1: 
         raise NotFoundException('No Companies found')
-    return {'message': 'Company list retrieved successfully', 'count': len(companies),'data': companies}
+    return {'message': 'Company list retrieved successfully', 'total_count': company_count,'count': len(companies_object), 'next_page': page + 1, 'data': companies_object}
 
 
 @router.get("/companies/{company_id}", response_model=CustomResponse[BaseCompany], tags=["Companies"])

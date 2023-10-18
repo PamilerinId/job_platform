@@ -17,6 +17,8 @@ class CustomListResponse(BaseModel, Generic[DataT]):
     code: Optional[str] = "200"
     message: Optional[str] = None
     count: Optional[int] = None
+    total_count: Optional[int] =None
+    next_page: Optional[int] = None
     data: Optional[List[DataT]] = None
 
 # Mailing Schemas
