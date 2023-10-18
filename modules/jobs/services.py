@@ -31,6 +31,8 @@ async def fetch_jobs(current_user: Annotated[BaseUser, Depends(get_current_user)
                      limit: int = 10, page: int = 1, search: str = ''):
     
     skip = (page - 1) * limit
+    jobs_query = db.query(Job).options(
+            joinedload(Job.company).joinedload(Company.profile))
     # if user is candidate; get industry related tags
     if (current_user.role == UserType.CANDIDATE):
         jobs_query = db.query(Job).options(
