@@ -196,30 +196,35 @@ async def create_company(payload: CreateCompanySchema,
                    current_user: Annotated[BaseUser, Depends(get_current_user)],
                    db: Session = Depends(get_db)):
     
+    if current_user.role == UserType.CANDIDATE:
+        raise UnauthorisedUserException("You are not authorized to create company profiles")
+    
     #TODO: Refactor to utils
     slug = slugify(payload.name, max_length=15, word_boundary=True, 
                 separator=".", stopwords=['the', 'and', 'of'])
-    
+
+    if current_user.role == UserType.ADMIN:
+        user_query = db.query(User).filter(User.id == payload.client_id)
+    else:
+        user_query = db.query(User).filter(User.id == current_user.id)
+
+
     company = db.query(Company).filter(Company.slug == slug).first()
 
     if company:
         # Contact company owner message, reach out to support email
         raise DuplicateCompanyException
     
-    # Check that the client is a valid user and has role of CLIENT
-    user = db.query(User).filter(User.id == current_user.id)
-
-    if current_user.role == UserType.CANDIDATE:
-        raise UnauthorisedUserException("You are not authorized to create company profiles")
+    user_object = user_query.first()
     
     new_company = Company(**payload.dict())
     new_company.slug = slug
-    new_company.owner_id = current_user.id
+    new_company.owner_id = user_object.id
     new_company.secret_key = secrets.token_urlsafe()
     db.add(new_company)
     db.commit()
     # update related models
-    user.company_id = new_company.id
+    user_object.company_id = new_company.id
     new_company_profile = CompanyProfile(company_id=new_company.id)
     new_company_profile.updated_at = datetime.now()
     db.add(new_company_profile)
@@ -237,8 +242,15 @@ async def update_company_profile(company_id: Annotated[UUID, Path(title="The ID 
     if current_user.role == UserType.CANDIDATE:
         raise UnauthorisedUserException("User is not authorised to edit company details")
     
+    if current_user.role == UserType.ADMIN:
+        user_query = db.query(User).filter(User.id == payload.client_id)
+    else:
+        user_query = db.query(User).filter(User.id == current_user.id)
+
+    user = user_query.first()
+    
     company = db.query(Company).options(
-                joinedload(Company.profile)).filter(Company.owner_id == str(current_user.id)).first()
+                joinedload(Company.profile)).filter(Company.owner_id == str(user.id)).first()
 
     if company.id != company_id:
         raise UnauthorisedUserException("User is not authorised to edit this company details")

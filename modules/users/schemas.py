@@ -50,6 +50,7 @@ class CreateCompanySchema(BaseModel):
     name: str
     description: Optional[str] = None
     logo_url: Optional[str] = None
+    client_id: Optional[UUID] = None
     model_config = ConfigDict(from_attributes=True, validate_assignment=True)
     
     # @validator("logo_url")
