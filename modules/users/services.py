@@ -212,6 +212,8 @@ async def create_company(payload: CreateCompanySchema,
                 separator=".", stopwords=['the', 'and', 'of'])
 
     if current_user.role == UserType.ADMIN:
+        if not payload.client_id:
+            raise BadRequestException("Kindly pass client id")
         user_query = db.query(User).filter(User.id == payload.client_id)
     else:
         user_query = db.query(User).filter(User.id == current_user.id)
@@ -224,6 +226,8 @@ async def create_company(payload: CreateCompanySchema,
         raise DuplicateCompanyException
     
     user_object = user_query.first()
+    if user_object is None:
+        raise NotFoundException('No such client')
     
     new_company = Company(**payload.dict())
     new_company.slug = slug
@@ -250,23 +254,32 @@ async def update_company_profile(company_id: Annotated[UUID, Path(title="The ID 
     if current_user.role == UserType.CANDIDATE:
         raise UnauthorisedUserException("User is not authorised to edit company details")
     
-    if current_user.role == UserType.ADMIN:
+    if current_user.role == UserType.ADMIN: 
+        if not payload.client_id:
+            raise BadRequestException("Kindly pass client id")
         user_query = db.query(User).filter(User.id == payload.client_id)
     else:
         user_query = db.query(User).filter(User.id == current_user.id)
 
     user = user_query.first()
+    if user is None:
+        raise NotFoundException('No such client')
+    
     
     company = db.query(Company).options(
                 joinedload(Company.profile)).filter(Company.owner_id == str(user.id)).first()
+    
+    if company is None:
+        raise NotFoundException("Company not found!")
+    
+    print('###############################', company, flush=True)
 
     if company.id != company_id:
         raise UnauthorisedUserException("User is not authorised to edit this company details")
     
     company_query = db.query(Company).filter(Company.id == company_id)
     company = company_query.first()
-    if company is None:
-        raise NotFoundException("Company not found!")
+    
     
     company_query.update(payload.dict(exclude={'profile'},exclude_unset=True), synchronize_session=False)
     if payload.profile != None:
