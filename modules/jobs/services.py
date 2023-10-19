@@ -1,5 +1,6 @@
 from datetime import timedelta, datetime
 from typing import Annotated
+from core.exceptions.auth import UnauthorisedUserException
 from pydantic import TypeAdapter
 from core.exceptions.base import BadRequestException, DuplicateValueException, ForbiddenException, NotFoundException
 from fastapi import Depends, HTTPException, status, APIRouter, Response, Path
@@ -124,7 +125,7 @@ def create_job(payload: CreateJobSchema,
     
 
     if current_user.role == UserType.ADMIN:
-        company = db.query(Company).filter(Company.owner_id == str(payload.company_id)).first()
+        company = db.query(Company).filter(Company.id == str(payload.company_id)).first()
     else:
         company = db.query(Company).filter(Company.owner_id == str(current_user.id)).first()
 
@@ -158,7 +159,7 @@ def update_job(job_id: Annotated[UUID, Path(title="The ID of the job to be updat
     
 
     if current_user.role == UserType.ADMIN:
-        company = db.query(Company).filter(Company.owner_id == str(payload.company_id)).first()
+        company = db.query(Company).filter(Company.id == str(payload.company_id)).first()
     else:
         company = db.query(Company).filter(Company.owner_id == str(current_user.id)).first()
     
@@ -180,15 +181,21 @@ def publish_job(job_id: Annotated[UUID, Path(title="The ID of the job to be upda
                current_user: Annotated[BaseUser, Depends(get_current_user)],
                db: Session = Depends(get_db),):
     
-    company = db.query(Company).filter(Company.owner_id == str(current_user.id)).first()
+    # if current_user.role == UserType.ADMIN:
+    #     company = db.query(Company).filter(Company.id == str(payload.company_id)).first()
+    # else:
+    #     company = db.query(Company).filter(Company.owner_id == str(current_user.id)).first()
 
-    if company is None:
-        raise BadRequestException('Please complete company profile')
+    # if company is None:
+    #     raise BadRequestException('Please complete company profile')
+
+
+    if current_user.role == UserType.CANDIDATE:
+        raise UnauthorisedUserException("User is not authorised to edit company details")
 
     job_query = db.query(Job).options(
         joinedload(Job.company)
-        .joinedload(Company.profile)).filter(Job.id == job_id,
-        Job.company_id == company.id)
+        .joinedload(Company.profile)).filter(Job.id == job_id)
     
     job = job_query.first()
     if job is None:
