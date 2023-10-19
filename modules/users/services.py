@@ -229,7 +229,7 @@ async def create_company(payload: CreateCompanySchema,
     if user_object is None:
         raise NotFoundException('No such client')
     
-    new_company = Company(**payload.dict())
+    new_company = Company(**payload.dict(exclude={'client_id'}))
     new_company.slug = slug
     new_company.owner_id = user_object.id
     new_company.secret_key = secrets.token_urlsafe()
@@ -264,27 +264,23 @@ async def update_company_profile(company_id: Annotated[UUID, Path(title="The ID 
     user = user_query.first()
     if user is None:
         raise NotFoundException('No such client')
+
     
-    
-    company = db.query(Company).options(
-                joinedload(Company.profile)).filter(Company.owner_id == str(user.id)).first()
-    
+    company_query = db.query(Company).filter(Company.id == company_id)
+    company = company_query.first()
+
     if company is None:
         raise NotFoundException("Company not found!")
     
-    print('###############################', company, flush=True)
 
     if company.id != company_id:
         raise UnauthorisedUserException("User is not authorised to edit this company details")
     
-    company_query = db.query(Company).filter(Company.id == company_id)
-    company = company_query.first()
     
-    
-    company_query.update(payload.dict(exclude={'profile'},exclude_unset=True), synchronize_session=False)
+    company_query.update(payload.dict(exclude={'profile', 'client_id'},exclude_unset=True), synchronize_session=False)
     if payload.profile != None:
         company_profile_query = db.query(CompanyProfile).filter(CompanyProfile.company_id == company_id)
-        company_profile_query.update(payload.profile.dict(exclude_unset=True), synchronize_session=False)
+        company_profile_query.update(payload.profile.dict(exclude={'company_id'}, exclude_unset=True), synchronize_session=False)
     
     db.commit()
     
