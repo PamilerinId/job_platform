@@ -278,23 +278,24 @@ async def get_job_applications(job_id: Annotated[Optional[UUID], Path(title="The
     job  = db.query(Job).filter(Job.id==job_id).first()
     if (job is None) or (job.status == JobStatus.CLOSED):
         raise NotFoundException("Job does not exist or has been closed.")
-    
+
     
     application_query = db.query(Application).options(
-                                    joinedload(Application.job)
-                                    .joinedload(Job.company))
+                                    joinedload(Application.job))
+    
     if current_user.role == UserType.ADMIN:
-        application_query.filter(Application.job_id == job_id)
-    else: 
+        application_query = application_query.filter(Application.job_id == str(job.id))
+    elif current_user.role == UserType.CLIENT: 
         company = db.query(Company).filter(Company.owner_id == str(current_user.id)).first()
         if company is None:
             raise ForbiddenException("You dont seem to have a company profile, contact support")
-        application_query.filter(Application.job_id == job_id,Job.company_id == company.id)#, Application.status == ApplicationStatus.SHORTLISTED)
+        application_query = application_query.filter(Application.job_id == job_id, Job.company_id == company.id)#, Application.status == ApplicationStatus.SHORTLISTED)
 
     applications = application_query.all()
     if len(applications) < 1:
         # raise NotFoundException("No Applications Found")
         return {"message":"No Applications Found!"}
+
     
     for application in applications:
         cv_files = db.query(File).filter(
