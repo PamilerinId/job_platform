@@ -81,7 +81,7 @@ async def fetch_recommended_jobs(current_user: Annotated[BaseUser, Depends(get_c
     return {'message': 'Jobs retrieved successfully', 'count': len(jobs), 'data': jobs}
 
 @router.get('/applications', response_model=CustomListResponse[BaseApplication], tags=["Applications"])
-async def get_applications(current_user: Annotated[BaseUser, Depends(get_current_user)],
+async def get_candidate_applications(current_user: Annotated[BaseUser, Depends(get_current_user)],
                                 db: Session = Depends(get_db),):
     '''
     Candidate:
@@ -279,11 +279,18 @@ async def get_job_applications(job_id: Annotated[Optional[UUID], Path(title="The
     if (job is None) or (job.status == JobStatus.CLOSED):
         raise NotFoundException("Job does not exist or has been closed.")
     
-    company = db.query(Company).filter(Company.owner_id == str(current_user.id)).first()
+    
     application_query = db.query(Application).options(
                                     joinedload(Application.job)
-                                    .joinedload(Job.company)).filter(Application.job_id == job_id,
-                                                      Job.company_id == company.id)#, Application.status == ApplicationStatus.SHORTLISTED)
+                                    .joinedload(Job.company))
+    if current_user.role == UserType.ADMIN:
+        application_query.filter(Application.job_id == job_id)
+    else: 
+        company = db.query(Company).filter(Company.owner_id == str(current_user.id)).first()
+        if company is None:
+            raise ForbiddenException("You dont seem to have a company profile, contact support")
+        application_query.filter(Application.job_id == job_id,Job.company_id == company.id)#, Application.status == ApplicationStatus.SHORTLISTED)
+
     applications = application_query.all()
     if len(applications) < 1:
         # raise NotFoundException("No Applications Found")
@@ -323,7 +330,7 @@ async def shortlist_application(application_id: Annotated[UUID, Path(title="The 
     if current_user == UserType.CANDIDATE:
         raise ForbiddenException('You are not allowed to update this application!')
 
-    application_query = db.query(Application).filter(or_(Application.id == application_id, Application.applicant_id == current_user.id))
+    application_query = db.query(Application).filter(Application.id == application_id)
     application = application_query.first()
 
     if application is None:
