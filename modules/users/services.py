@@ -267,7 +267,7 @@ async def update_company_profile(company_id: Annotated[UUID, Path(title="The ID 
     
     
     company = db.query(Company).options(
-                joinedload(Company.profile)).filter(Company.owner_id == str(user.id)).first()
+                joinedload(Company.profile)).filter(Company.id == company_id).first()
     
     if company is None:
         raise NotFoundException("Company not found!")
