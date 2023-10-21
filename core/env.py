@@ -61,8 +61,8 @@ class LocalConfig(Config):
 class ProductionConfig(Config):
     ENV: str = "production"
     DEBUG: bool = False
-    WRITER_DB_URL: str = f"mysql+aiomysql://fastapi:fastapi@localhost:3306/prod"
-    READER_DB_URL: str = f"mysql+aiomysql://fastapi:fastapi@localhost:3306/prod"
+    # WRITER_DB_URL: str = f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_SERVER}:{POSTGRES_PORT}/{POSTGRES_DB}"
+    # READER_DB_URL: str = f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_SERVER}:{POSTGRES_PORT}/{POSTGRES_DB}"
 
 
 def get_config():
