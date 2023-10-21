@@ -367,7 +367,7 @@ def get_current_user(current_user: Annotated[BaseUser, Depends(get_current_user)
             .order_by(File.created_at.desc()).limit(3).all()
         if current_user.candidate_profile:
             current_user.candidate_profile.cv = TypeAdapter(List[FileSchema]).validate_python(cv_files)
-    else:
+    elif(current_user.role == UserType.CLIENT):
         company = db.query(Company).options(
                 joinedload(Company.profile)).filter(Company.owner_id == str(current_user.id)).first()
         if company:
