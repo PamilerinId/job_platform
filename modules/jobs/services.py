@@ -26,7 +26,7 @@ router = APIRouter(
 )
 
 
-@router.get("/", response_model=CustomListResponse[BaseJob], tags=["Jobs"])
+@router.get("/",  tags=["Jobs"])
 async def fetch_jobs(current_user: Annotated[BaseUser, Depends(get_current_user)],
                      db: Session = Depends(get_db), 
                      limit: int = 10, page: int = 1, search: str = ''):
@@ -37,7 +37,7 @@ async def fetch_jobs(current_user: Annotated[BaseUser, Depends(get_current_user)
     # if user is candidate; get industry related tags
     if (current_user.role == UserType.CANDIDATE):
         jobs_query = db.query(Job).options(
-            joinedload(Job.company))
+            joinedload(Job.company)).filter(Job.status == JobStatus.ACTIVE)
         if search:
             jobs_query.filter(
             Job.tags.contains([search]))
@@ -61,24 +61,29 @@ async def fetch_jobs(current_user: Annotated[BaseUser, Depends(get_current_user)
     # if no user; no jobs
     # if thirdparty; filter tier [distinct user]
     jobs = jobs_query.order_by(Job.created_at.desc()).limit(limit).offset(skip).all()
+    print('#######################################',jobs[0].__dict__, flush=True)
+    total_count = jobs_query.count()
     if len(jobs) < 1: 
         raise NotFoundException('No Jobs found')
-    return {'message': 'Jobs retrieved successfully', 'count': len(jobs), 'data': jobs}
+    return {'message': 'Jobs retrieved successfully', 'total_count': total_count, 'next_page': 1,'count': len(jobs), 'data': jobs}
 
 @router.get("/recommended", response_model=CustomListResponse[BaseJob], tags=["Jobs"])
 async def fetch_recommended_jobs(current_user: Annotated[BaseUser, Depends(get_current_user)],
                      db: Session = Depends(get_db)):
 
     # if user is candidate; get industry related tags
-    jobs_query = db.query(Job).options(joinedload(Job.company))
+    jobs_query = db.query(Job).options(joinedload(Job.company).joinedload(Company.profile))
+
     if current_user.candidate_profile:
         jobs_query.filter(
-            Job.tags.contains([current_user.candidate_profile.skills]))
+            Job.tags.contains([current_user.candidate_profile.skills]),
+            Job.status == JobStatus.ACTIVE)
     
     jobs = jobs_query.order_by(Job.deadline.desc()).limit(5).all()
+    job_count = jobs_query.count()
     if len(jobs) < 1: 
         raise NotFoundException('No Jobs found')
-    return {'message': 'Jobs retrieved successfully', 'count': len(jobs), 'data': jobs}
+    return {'message': 'Jobs retrieved successfully', 'total_count': job_count, 'next_page': 1,'count': len(jobs), 'data': jobs}
 
 @router.get('/applications', response_model=CustomListResponse[BaseApplication], tags=["Applications"])
 async def get_candidate_applications(current_user: Annotated[BaseUser, Depends(get_current_user)],
