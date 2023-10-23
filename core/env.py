@@ -38,6 +38,10 @@ class Config(BaseSettings):
     GOOGLE_CLIENT_ID: str | None = os.environ.get("GOOGLE_CLIENT_ID")
     GOOGLE_CLIENT_SECRET: str | None = os.environ.get("GOOGLE_CLIENT_SECRET")
     
+    CLIENT_CANDIDATE_BASE_URL: str = 'https://dashboard.distinct.ai'
+    AUTH: str = '/auth'
+    CHANGE_PASSWORD: str = '/change-password'
+    
     # CELERY_BROKER_URL: str = "amqp://user:bitnami@localhost:5672/"
     # CELERY_BACKEND_URL: str = "redis://:password123@localhost:6379/0"
     # REDIS_HOST: str = "localhost"
