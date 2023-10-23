@@ -288,7 +288,7 @@ async def password_reset_request(payload: PasswordResetRequestSchema,
     data =  {"token":TokenHelper.encode({"id": str(user.id), "email": user.email}, 900)}
     
     #Send mail
-    email_payload = PasswordResetEmail(first_name = user.first_name, action_url = f'{config.CLIENT_CANDIDATE_BASE_URL}{config.AUTH}{config.CHANGE_PASSWORD}/{data["token"]}')
+    email_payload = PasswordResetEmail(first_name = user.first_name, action_url = f'{config.CLIENT_CANDIDATE_BASE_URL}{config.AUTH}{config.CHANGE_PASSWORD}/{data["token"].decode()}')
     mail_notify(payload.email, PASSWORD_RESET_MAIL, email_payload)
     
     return  {"message": "Password reset requested successfully", "data":data}
