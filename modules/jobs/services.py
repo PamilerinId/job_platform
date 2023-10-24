@@ -44,12 +44,12 @@ async def fetch_jobs(current_user: Annotated[BaseUser, Depends(get_current_user)
     # if user is client; filter by company jobs
     # elif(current_user.user.role == UserType.CLIENT):
     elif(current_user.role == UserType.CLIENT):
-        print('HEERE', current_user.client_profile.company, flush=True)
+        # print('HEERE', current_user.client_profile.company, flush=True)
         company = db.query(Company).options(
                 joinedload(Company.profile)).filter(Company.owner_id == str(current_user.id)).first()
         if company:
             current_user.client_profile.company = company
-        print('HEERE', current_user.client_profile.company.id, flush=True)
+        # print('HEERE', current_user.client_profile.company.id, flush=True)
         if current_user.client_profile and current_user.client_profile.company:
             # print('HEERE2', current_user.client_profile.company,  flush=True)
             jobs_query = db.query(Job).options(
@@ -148,7 +148,7 @@ def create_job(payload: CreateJobSchema,
     new_job.company_id = company.id
     new_job.updated_at = datetime.now()
     new_job.deadline = datetime.now() + timedelta(days=10)
-    new_job.status =  JobStatus.DRAFT
+    new_job.status =  JobStatus.ACTIVE
     db.add(new_job)
     db.commit()
     db.refresh(new_job)
