@@ -26,34 +26,34 @@ router = APIRouter(
 )
 
 
-@router.get("/",  tags=["Jobs"])
+@router.get("/", response_model=CustomListResponse[BaseJob], tags=["Jobs"])
 async def fetch_jobs(current_user: Annotated[BaseUser, Depends(get_current_user)],
                      db: Session = Depends(get_db), 
                      limit: int = 10, page: int = 1, search: str = ''):
     
     skip = (page - 1) * limit
-    jobs_query = db.query(Job).options(
-            joinedload(Job.company).joinedload(Company.profile))
+    jobs_query = db.query(Job).options(joinedload(Job.company).joinedload(Company.profile))
     # if user is candidate; get industry related tags
     if (current_user.role == UserType.CANDIDATE):
         jobs_query = db.query(Job).options(
-            joinedload(Job.company)).filter(Job.status == JobStatus.ACTIVE)
+            joinedload(Job.company)
+            .joinedload(Company.profile)).filter(Job.status == JobStatus.ACTIVE)
         if search:
             jobs_query.filter(
             Job.tags.contains([search]))
     # if user is client; filter by company jobs
     # elif(current_user.user.role == UserType.CLIENT):
-    elif(current_user.role == UserType.CLIENT.value):
-        # print('HEERE', current_user.client_profile.company, flush=True)
+    elif(current_user.role == UserType.CLIENT):
+        print('HEERE', current_user.client_profile.company, flush=True)
         company = db.query(Company).options(
                 joinedload(Company.profile)).filter(Company.owner_id == str(current_user.id)).first()
         if company:
             current_user.client_profile.company = company
+        print('HEERE', current_user.client_profile.company.id, flush=True)
         if current_user.client_profile and current_user.client_profile.company:
             # print('HEERE2', current_user.client_profile.company,  flush=True)
             jobs_query = db.query(Job).options(
-                joinedload(Job.company)
-                .joinedload(Company.profile)).filter(
+                joinedload(Job.company).joinedload(Company.profile)).filter(
                 Job.company_id == current_user.client_profile.company.id)
         else:
             return {'message': 'You have created no Jobs'}
@@ -61,7 +61,6 @@ async def fetch_jobs(current_user: Annotated[BaseUser, Depends(get_current_user)
     # if no user; no jobs
     # if thirdparty; filter tier [distinct user]
     jobs = jobs_query.order_by(Job.created_at.desc()).limit(limit).offset(skip).all()
-    print('#######################################',jobs[0].__dict__, flush=True)
     total_count = jobs_query.count()
     if len(jobs) < 1: 
         raise NotFoundException('No Jobs found')
@@ -296,6 +295,7 @@ async def get_job_applications(job_id: Annotated[Optional[UUID], Path(title="The
             raise ForbiddenException("You dont seem to have a company profile, contact support")
         application_query = application_query.filter(Application.job_id == job_id, Job.company_id == company.id)#, Application.status == ApplicationStatus.SHORTLISTED)
 
+    total_count = application_query.count()
     applications = application_query.all()
     if len(applications) < 1:
         # raise NotFoundException("No Applications Found")
@@ -308,7 +308,7 @@ async def get_job_applications(job_id: Annotated[Optional[UUID], Path(title="The
             .order_by(File.created_at.desc()).limit(3).all()
         application.applicant.candidate_profile.cv = TypeAdapter(List[FileSchema]).validate_python(cv_files)
         
-    return {"message":"Applications retrieved successful","count": len(applications),"data": applications}
+    return {"message":"Applications retrieved successful","count": len(applications), "total_count": total_count, "data": applications}
 
 @router.put('/applications/{application_id}', response_model=CustomResponse[BaseApplication], tags=["Applications"])
 async def update_application(application_id: Annotated[UUID, Path(title="The ID of the application to be updated")],
