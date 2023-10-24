@@ -49,9 +49,9 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
     exception_name = getattr(exception_type, "__name__", None)
     print(exception_name, flush=True)
     logger.error(
-        f'{host}:{port} - "{request.method} {url}" {exc.code} {exc.message} <{exception_name}: {exc.error_code}>'
+        f'{host}:{port} - "{request.method} {url}" <{exception_name}>'
     )
-    return JSONResponse(content = jsonable_encoder(exc), status_code=exc.code)
+    return JSONResponse(content = jsonable_encoder(exc))
 
 
 # {"code":exc.code, "message":str(exc.message)}
