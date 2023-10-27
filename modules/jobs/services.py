@@ -308,7 +308,7 @@ async def get_job_applications(job_id: Annotated[Optional[UUID], Path(title="The
             .order_by(File.created_at.desc()).limit(3).all()
         application.applicant.candidate_profile.cv = TypeAdapter(List[FileSchema]).validate_python(cv_files)
         
-    return {"message":"Applications retrieved successful","count": len(applications), "total_count": total_count, "data": applications}
+    return {"message":"Applications retrieved successful","count": len(applications), "total_count": len(applications), "data": applications}
 
 @router.put('/applications/{application_id}', response_model=CustomResponse[BaseApplication], tags=["Applications"])
 async def update_application(application_id: Annotated[UUID, Path(title="The ID of the application to be updated")],
