@@ -41,8 +41,8 @@ class CreateJobSchema(BaseModel):
     salaryRangeTo: int
     skills: List[str]
     benefits: List[str]
-    company_id: Optional[UUID] = None
-    # deadline: str
+    company_id: Optional[UUID or str] = None
+    deadline: Optional[str] = None
 
 
 class UpdateJobSchema(BaseModel):
@@ -60,6 +60,7 @@ class UpdateJobSchema(BaseModel):
     skills: Optional[List[str]]= None
     benefits: Optional[List[str]]= None
     company_id: Optional[UUID] = None
+    deadline: Optional[str] = None
     model_config = ConfigDict(from_attributes=True)
 
 
