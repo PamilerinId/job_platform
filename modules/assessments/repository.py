@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session, joinedload
+from typing import List
 
 
 from fastapi import Depends
@@ -7,7 +8,7 @@ from core.exceptions.base import BadRequestException, NotFoundException
 from core.dependencies.sessions import get_db
 
 from .models import Assessment, Question, Answer, UserResult, AssessmentDifficulty, QuestionDifficulty, QuestionType
-from .schemas import BaseAssessment, BaseAnswer, BaseQuestion, BaseUserResults
+from .schemas import *
 
 
 class AssessmentRepository:
@@ -17,28 +18,60 @@ class AssessmentRepository:
         self.db = db
 
     
-    async def getOrCreate(self, payload: BaseAssessment):
+    async def getOrCreate(self, payload: CreateAssessmentSchema):
         if payload.id:
             assessment = self.db.query(Assessment).filter(Assessment.id==payload.id).first()
             if assessment is None:
                 raise NotFoundException("No assessment not found!")
-        else:
-            assessment = Assessment(**payload.__dict__)
-
-            self.db.add(assessment)
-            self.db.commit()
-            self.db.refresh(assessment)
+        else:            
+            assessment = self.create(payload=payload)
 
         return assessment
 
     
-    async def create(self, payload: BaseAssessment):
-        assessment = Assessment(**payload.__dict__)
-
+    async def create(self, payload: CreateAssessmentSchema):
+        assessment_load = CreateAssessmentSchema(
+            name = payload.name,
+            slug = payload.slug,
+            description = payload.description,
+            instructions = payload.instructions,
+            difficulty = payload.difficulty,
+            tags = payload.tags,
+            skills = payload.skills,
+            duration = payload.duration,
+        )
+        assessment = Assessment(**assessment_load.__dict__)
         self.db.add(assessment)
         self.db.commit()
         self.db.refresh(assessment)
-
+        for question_item in payload.questions:
+            question =  Question(
+             title = question_item.title,
+             category = question_item.category,
+             assessment_id = assessment.id,
+             question_type = question_item.question_type,
+             difficulty = question_item.difficulty,
+             tags = question_item.tags,
+            )
+            self.db.add(question)
+            self.db.commit()
+            print(f"Question id is {question.id}")
+            for answer_item in question_item.answers:
+                answer_load = CreateAnswerSchema(
+                    question_id = question.id,
+                    answer_text = answer_item.answer_text,
+                    boolean_text = answer_item.boolean_text,
+                    is_correct = answer_item.is_correct,
+                    feedback = answer_item.feedback
+                )
+                answer = Answer(**answer_load.__dict__)
+                self.db.add(answer)
+            self.db.commit()
+            self.db.refresh(answer)
+        
+        self.db.commit()
+        self.db.refresh(question)
+        self.db.refresh(assessment)
         return assessment
 
     
@@ -51,7 +84,8 @@ class AssessmentRepository:
         return assessment
 
     
-    async def get_list(self,  page: int, limit: int, filter):
+    async def get_list(self,  page: int, limit: int, filter: str):
+        self.db.rollback()
         skip = (page - 1) * limit
 
         assessments = self.db.query(Assessment
@@ -59,7 +93,7 @@ class AssessmentRepository:
                                                          ).limit(limit).offset(skip).all()
         
         if len(assessments) < 1:
-            raise NotFoundException("Assessment not found!")  
+            raise NotFoundException("Assessments not found!")  
         return assessments
     
 

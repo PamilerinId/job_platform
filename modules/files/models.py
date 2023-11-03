@@ -15,6 +15,7 @@ class FileType(str, enum.Enum):
     COVER_LETTER = 'COVER_LETTER'
     VIDEO = 'VIDEO'
     LOGO = 'LOGO'
+    ASSESSMENT = 'ASSESSMENT'
 
 class File(Base):
     __tablename__ = "files"

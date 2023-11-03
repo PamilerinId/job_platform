@@ -39,8 +39,8 @@ class Assessment(Base):
     __tablename__ = 'assessments'
     id = Column(UUID(as_uuid=True), primary_key=True, nullable=False,
                 default=uuid.uuid4)
-    name = Column(String,  nullable=False) 
-    slug = Column(String, nullable=False, unique=True)
+    name = Column(String,  nullable=False, unique=True) 
+    slug = Column(String, nullable=True)
     description = Column(Text,  nullable=False)
     instructions = Column(Text,  nullable=False)
     difficulty = Column(Enum(AssessmentDifficulty))
@@ -60,7 +60,7 @@ class Assessment(Base):
                         nullable=False, server_default=text("now()"), onupdate=text("now()"))
     
     def __repr__(self):
-        return f"<Assessment {self.name}>"
+        return f"<Assessment {self.id}>"
     
 
 class Question(Base):
@@ -97,7 +97,7 @@ class Answer(Base):
     question_id = Column(UUID(), ForeignKey('questions.id'), index=True,)
     answer_text = Column(String, nullable=True)
     boolean_text = Column(Boolean, nullable=True)
-    is_correct = Column(Boolean)
+    is_correct = Column(Boolean, nullable=False)
     feedback = Column(Text,  nullable=False)
 
     question = relationship('Question', back_populates='answers')
@@ -110,7 +110,7 @@ class Answer(Base):
                         nullable=False, server_default=text("now()"), onupdate=text("now()"))
     
     def __repr__(self):
-        return f"<Answer {self.title}>"
+        return f"{self.id}"
     
 
 class JobAssessment(Base):
