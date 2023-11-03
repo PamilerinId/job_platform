@@ -105,13 +105,16 @@ class AssessmentRepository:
         return assessments
 
     
-    async def update(self, payload):
-        assessment_query = self.db.query(Assessment).filter(Assessment.id==payload.id)
-        assessment = assessment_query.first()
+    async def update(self, payload: BaseAssessment):
+        # assessment_query = self.db.query(Assessment).filter(Assessment.id==payload.id)
+        # assessment = assessment_query.first()
+        assessment = self.get_by_id(payload.id)
+        
         if assessment is None:
             raise NotFoundException("Assessment not found!")
         
-        assessment_query.update(payload.dict(exclude_unset=True), synchronize_session=False)
+        print(payload.dict())
+        assessment.update(payload.dict(exclude_unset=True), synchronize_session=False)
 
         self.db.add(assessment)
         self.db.commit()

@@ -11,7 +11,7 @@ class BaseAnswer(BaseModel):
     answer_text: Optional[str] = None
     boolean_text: Optional[bool] = None
     is_correct: Optional[bool] = False
-    feedback: Optional[str] = None
+    feedback: Optional[str] 
 
 
 class BaseQuestion(BaseModel):
@@ -45,7 +45,7 @@ class CreateAnswerSchema(BaseModel):
     answer_text: Optional[str] = None
     boolean_text: Optional[bool] = None
     is_correct: Optional[bool] = None
-    feedback: Optional[str] = None
+    feedback: Optional[str] 
 
 
 class CreateQuestionSchema(BaseModel):
