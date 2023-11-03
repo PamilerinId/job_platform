@@ -30,7 +30,12 @@ class AssessmentRepository:
 
     
     async def create(self, payload: CreateAssessmentSchema):
-        assessment_load = CreateAssessmentSchema(
+        
+        assessment = self.db.query(Assessment).filter(Assessment.name==payload.name).first()
+        if assessment is not None:
+            raise BadRequestException("Assessment already exists!")
+        
+        assessment = Assessment(
             name = payload.name,
             slug = payload.slug,
             description = payload.description,
@@ -40,7 +45,6 @@ class AssessmentRepository:
             skills = payload.skills,
             duration = payload.duration,
         )
-        assessment = Assessment(**assessment_load.__dict__)
         self.db.add(assessment)
         self.db.commit()
         self.db.refresh(assessment)
@@ -57,14 +61,13 @@ class AssessmentRepository:
             self.db.commit()
             print(f"Question id is {question.id}")
             for answer_item in question_item.answers:
-                answer_load = CreateAnswerSchema(
+                answer = Answer(
                     question_id = question.id,
                     answer_text = answer_item.answer_text,
                     boolean_text = answer_item.boolean_text,
                     is_correct = answer_item.is_correct,
                     feedback = answer_item.feedback
                 )
-                answer = Answer(**answer_load.__dict__)
                 self.db.add(answer)
             self.db.commit()
             self.db.refresh(answer)
