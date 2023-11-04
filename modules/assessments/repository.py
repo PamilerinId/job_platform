@@ -109,19 +109,29 @@ class AssessmentRepository:
 
     
     async def update(self, payload: BaseAssessment):
-        # assessment_query = self.db.query(Assessment).filter(Assessment.id==payload.id)
-        # assessment = assessment_query.first()
-        assessment = self.get_by_id(payload.id)
+        print(payload)
+        assessment_query = self.db.query(Assessment).filter(Assessment.id==payload.id)
+        assessment = assessment_query.first()
         
         if assessment is None:
             raise NotFoundException("Assessment not found!")
         
-        print(payload.dict())
-        assessment.update(payload.dict(exclude_unset=True), synchronize_session=False)
-
-        self.db.add(assessment)
+        for quest in range(0, len(assessment.questions)):
+            for ans in range(0, len(assessment.questions[quest].answers)):
+                answer_query = self.db.query(Answer).filter(Answer.id == assessment.questions[quest].answers[ans].id)
+                answer_query = answer_query.__dict__
+                assessment.questions[quest].answers[ans].__dict__.pop("_sa_instance_state")
+                answer_query.update(assessment.questions[quest].answers[ans].__dict__, synchronize_session=False)
+                self.db.commit()
+            
+            question_obj = self.db.query(Question).filter(Question.id == assessment.questions[quest].id)
+            payload.questions[quest].__dict__.pop("answers")
+            question_obj.update(payload.questions[quest].__dict__, synchronize_session=False)
+            self.db.commit()
+        payload.__dict__.pop("questions")
+        assessment_query.update(payload.__dict__, synchronize_session=False)
         self.db.commit()
-
+        
         return assessment
 
     
