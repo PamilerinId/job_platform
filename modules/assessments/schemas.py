@@ -18,7 +18,7 @@ class BaseQuestion(BaseModel):
     id: Optional[UUID] = None
     title: str
     category: Optional[str] = None
-    assessment_id: Optional[UUID]= None
+    assessment_id: UUID
     question_type: QuestionType
     difficulty: QuestionDifficulty
     # options: Optional[List[str]] = None

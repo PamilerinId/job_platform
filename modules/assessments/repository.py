@@ -109,7 +109,6 @@ class AssessmentRepository:
 
     
     async def update(self, payload: BaseAssessment):
-        print(payload)
         assessment_query = self.db.query(Assessment).filter(Assessment.id==payload.id)
         assessment = assessment_query.first()
         
@@ -155,19 +154,69 @@ class QuestionRepository:
     def __init__(self) -> None:
         self.db: Session = get_db().__next__()
 
-    async def create(self, payload: BaseQuestion, assessment_id: str):
-        question = Question(**payload.__dict__)
-        question.assessment_id = assessment_id
+    async def create(self, payload: CreateQuestionSchema, assessment_id: str):
+        # question = Question(**payload.__dict__)
+        # question.assessment_id = assessment_id
+        # self.db.add(question)
+        # self.db.commit()
+        # self.db.refresh(question)
+        self.get(payload.id)
+        
+        question =  Question(
+            title = payload.title,
+            category = payload.category,
+            assessment_id = assessment_id,
+            question_type = payload.question_type,
+            difficulty = payload.difficulty,
+            tags = payload.tags,
+        )
         self.db.add(question)
+        self.db.commit()
+        
+        if payload.answers:    
+            for answer_item in payload.answers:
+                answer = Answer(
+                    question_id = question.id,
+                    answer_text = answer_item.answer_text,
+                    boolean_text = answer_item.boolean_text,
+                    is_correct = answer_item.is_correct,
+                    feedback = answer_item.feedback
+                )
+                self.db.add(answer)
+            self.db.commit()
+            self.db.refresh(answer)
+        
         self.db.commit()
         self.db.refresh(question)
 
         return question
     
-    async def create_with_answers(self, payload:BaseQuestion, assessment_id: str):
-        new_question = await self.create(payload, assessment_id)  # Create the base question first
-        for answer in payload.answers:
-            await AnswerRepository().create(answer)
+    async def create_with_answers(self, payload: BaseQuestion, assessment_id: str):        
+        new_question =  Question(
+            title = payload.title,
+            category = payload.category,
+            assessment_id = assessment_id,
+            question_type = payload.question_type,
+            difficulty = payload.difficulty,
+            tags = payload.tags,
+        )
+        self.db.add(new_question)
+        self.db.commit()
+        for answer_item in payload.answers:
+            answer = Answer(
+                question_id = new_question.id,
+                answer_text = answer_item.answer_text,
+                boolean_text = answer_item.boolean_text,
+                is_correct = answer_item.is_correct,
+                feedback = answer_item.feedback
+            )
+            self.db.add(answer)
+        self.db.commit()
+        self.db.refresh(answer)
+        
+        self.db.commit()
+        self.db.refresh(new_question)
+        
         return new_question 
 
 
@@ -229,9 +278,16 @@ class QuestionRepository:
         if question is None:
             raise NotFoundException("Question not found!")
         
-        question_query.update(payload.dict(exclude_unset=True), synchronize_session=False)
-
-        self.db.add(question)
+        # question_query.update(payload.dict(exclude_unset=True), synchronize_session=False)
+        for ans in range(0, len(question.answers)):
+            answer_query = self.db.query(Answer).filter(Answer.id == question.answers[ans].id)
+            answer_query = answer_query.__dict__
+            question.answers[ans].__dict__.pop("_sa_instance_state")
+            answer_query.update(question.answers[ans].__dict__, synchronize_session=False)
+            self.db.commit()
+        
+        payload.__dict__.pop("answers")
+        question_query.update(payload.__dict__, synchronize_session=False)
         self.db.commit()
 
         return question
