@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session, joinedload
+from typing import List
 
 
 from fastapi import Depends
@@ -7,7 +8,7 @@ from core.exceptions.base import BadRequestException, NotFoundException
 from core.dependencies.sessions import get_db
 
 from .models import Assessment, Question, Answer, UserResult, AssessmentDifficulty, QuestionDifficulty, QuestionType
-from .schemas import BaseAssessment, BaseAnswer, BaseQuestion, BaseUserResults
+from .schemas import *
 
 
 class AssessmentRepository:
@@ -17,28 +18,63 @@ class AssessmentRepository:
         self.db = db
 
     
-    async def getOrCreate(self, payload: BaseAssessment):
+    async def getOrCreate(self, payload: CreateAssessmentSchema):
         if payload.id:
             assessment = self.db.query(Assessment).filter(Assessment.id==payload.id).first()
             if assessment is None:
                 raise NotFoundException("No assessment not found!")
-        else:
-            assessment = Assessment(**payload.__dict__)
-
-            self.db.add(assessment)
-            self.db.commit()
-            self.db.refresh(assessment)
+        else:            
+            assessment = self.create(payload=payload)
 
         return assessment
 
     
-    async def create(self, payload: BaseAssessment):
-        assessment = Assessment(**payload.__dict__)
-
+    async def create(self, payload: CreateAssessmentSchema):
+        
+        assessment = self.db.query(Assessment).filter(Assessment.name==payload.name).first()
+        if assessment is not None:
+            raise BadRequestException("Assessment already exists!")
+        
+        assessment = Assessment(
+            name = payload.name,
+            slug = payload.slug,
+            description = payload.description,
+            instructions = payload.instructions,
+            difficulty = payload.difficulty,
+            tags = payload.tags,
+            skills = payload.skills,
+            duration = payload.duration,
+        )
         self.db.add(assessment)
         self.db.commit()
         self.db.refresh(assessment)
-
+        for question_item in payload.questions:
+            question =  Question(
+             title = question_item.title,
+             category = question_item.category,
+             assessment_id = assessment.id,
+             question_type = question_item.question_type,
+             difficulty = question_item.difficulty,
+             tags = question_item.tags,
+            )
+            self.db.add(question)
+            self.db.commit()
+            print(f"Question id is {question.id}")
+            for answer_item in question_item.answers:
+                answer = Answer(
+                    question_id = question.id,
+                    answer_text = answer_item.answer_text,
+                    boolean_text = answer_item.boolean_text,
+                    is_correct = answer_item.is_correct,
+                    feedback = answer_item.feedback
+                )
+                self.db.add(answer)
+            self.db.commit()
+            self.db.refresh(answer)
+        
+        self.db.commit()
+        self.db.refresh(question)
+        self.db.refresh(assessment)
         return assessment
 
     
@@ -51,7 +87,8 @@ class AssessmentRepository:
         return assessment
 
     
-    async def get_list(self,  page: int, limit: int, filter):
+    async def get_list(self,  page: int, limit: int, filter: str):
+        self.db.rollback()
         skip = (page - 1) * limit
 
         assessments = self.db.query(Assessment
@@ -59,7 +96,7 @@ class AssessmentRepository:
                                                          ).limit(limit).offset(skip).all()
         
         if len(assessments) < 1:
-            raise NotFoundException("Assessment not found!")  
+            raise NotFoundException("Assessments not found!")  
         return assessments
     
 
@@ -71,17 +108,29 @@ class AssessmentRepository:
         return assessments
 
     
-    async def update(self, payload):
+    async def update(self, payload: BaseAssessment):
         assessment_query = self.db.query(Assessment).filter(Assessment.id==payload.id)
         assessment = assessment_query.first()
+        
         if assessment is None:
             raise NotFoundException("Assessment not found!")
         
-        assessment_query.update(payload.dict(exclude_unset=True), synchronize_session=False)
-
-        self.db.add(assessment)
+        for quest in range(0, len(assessment.questions)):
+            for ans in range(0, len(assessment.questions[quest].answers)):
+                answer_query = self.db.query(Answer).filter(Answer.id == assessment.questions[quest].answers[ans].id)
+                answer_query = answer_query.__dict__
+                assessment.questions[quest].answers[ans].__dict__.pop("_sa_instance_state")
+                answer_query.update(assessment.questions[quest].answers[ans].__dict__, synchronize_session=False)
+                self.db.commit()
+            
+            question_obj = self.db.query(Question).filter(Question.id == assessment.questions[quest].id)
+            payload.questions[quest].__dict__.pop("answers")
+            question_obj.update(payload.questions[quest].__dict__, synchronize_session=False)
+            self.db.commit()
+        payload.__dict__.pop("questions")
+        assessment_query.update(payload.__dict__, synchronize_session=False)
         self.db.commit()
-
+        
         return assessment
 
     
@@ -105,19 +154,69 @@ class QuestionRepository:
     def __init__(self) -> None:
         self.db: Session = get_db().__next__()
 
-    async def create(self, payload: BaseQuestion, assessment_id: str):
-        question = Question(**payload.__dict__)
-        question.assessment_id = assessment_id
+    async def create(self, payload: CreateQuestionSchema, assessment_id: str):
+        # question = Question(**payload.__dict__)
+        # question.assessment_id = assessment_id
+        # self.db.add(question)
+        # self.db.commit()
+        # self.db.refresh(question)
+        self.get(payload.id)
+        
+        question =  Question(
+            title = payload.title,
+            category = payload.category,
+            assessment_id = assessment_id,
+            question_type = payload.question_type,
+            difficulty = payload.difficulty,
+            tags = payload.tags,
+        )
         self.db.add(question)
+        self.db.commit()
+        
+        if payload.answers:    
+            for answer_item in payload.answers:
+                answer = Answer(
+                    question_id = question.id,
+                    answer_text = answer_item.answer_text,
+                    boolean_text = answer_item.boolean_text,
+                    is_correct = answer_item.is_correct,
+                    feedback = answer_item.feedback
+                )
+                self.db.add(answer)
+            self.db.commit()
+            self.db.refresh(answer)
+        
         self.db.commit()
         self.db.refresh(question)
 
         return question
     
-    async def create_with_answers(self, payload:BaseQuestion, assessment_id: str):
-        new_question = await self.create(payload, assessment_id)  # Create the base question first
-        for answer in payload.answers:
-            await AnswerRepository().create(answer)
+    async def create_with_answers(self, payload: BaseQuestion, assessment_id: str):        
+        new_question =  Question(
+            title = payload.title,
+            category = payload.category,
+            assessment_id = assessment_id,
+            question_type = payload.question_type,
+            difficulty = payload.difficulty,
+            tags = payload.tags,
+        )
+        self.db.add(new_question)
+        self.db.commit()
+        for answer_item in payload.answers:
+            answer = Answer(
+                question_id = new_question.id,
+                answer_text = answer_item.answer_text,
+                boolean_text = answer_item.boolean_text,
+                is_correct = answer_item.is_correct,
+                feedback = answer_item.feedback
+            )
+            self.db.add(answer)
+        self.db.commit()
+        self.db.refresh(answer)
+        
+        self.db.commit()
+        self.db.refresh(new_question)
+        
         return new_question 
 
 
@@ -179,9 +278,16 @@ class QuestionRepository:
         if question is None:
             raise NotFoundException("Question not found!")
         
-        question_query.update(payload.dict(exclude_unset=True), synchronize_session=False)
-
-        self.db.add(question)
+        # question_query.update(payload.dict(exclude_unset=True), synchronize_session=False)
+        for ans in range(0, len(question.answers)):
+            answer_query = self.db.query(Answer).filter(Answer.id == question.answers[ans].id)
+            answer_query = answer_query.__dict__
+            question.answers[ans].__dict__.pop("_sa_instance_state")
+            answer_query.update(question.answers[ans].__dict__, synchronize_session=False)
+            self.db.commit()
+        
+        payload.__dict__.pop("answers")
+        question_query.update(payload.__dict__, synchronize_session=False)
         self.db.commit()
 
         return question

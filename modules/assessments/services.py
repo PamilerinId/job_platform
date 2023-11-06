@@ -1,7 +1,7 @@
 
-from typing import Annotated
+from typing import Annotated, Union
 from uuid import UUID
-from fastapi import Depends, HTTPException, status, APIRouter, Response, Path
+from fastapi import Depends, HTTPException, status, APIRouter, Response, Path, File, UploadFile
 
 
 from core.dependencies.sessions import get_db
@@ -11,7 +11,7 @@ from core.helpers.text_utils import to_slug
 from modules.users.schemas import BaseUser
 
 from .models import Assessment, Question, Answer, UserResult
-from .schemas import BaseAssessment, BaseQuestion, BaseAnswer, BaseUserResults
+from .schemas import BaseAssessment, BaseQuestion, BaseAnswer, BaseUserResults, CreateAssessmentSchema, CreateQuestionSchema, CreateAnswerSchema
 from .repository import AssessmentRepository, QuestionRepository, UserResultRepository
 
 router = APIRouter(
@@ -26,11 +26,12 @@ resultRepo = UserResultRepository()
 # CRUD assessments - exposed only; questions and answer not exposed
 # fetch and update delete results
 @router.post('/', response_model=CustomResponse[BaseAssessment], tags=["Assessment"])
-async def create_assessments(payload: BaseAssessment):
+async def create_assessments(payload: CreateAssessmentSchema):
     """Create a new assessment""" 
+    
     try:
-        newAssesment = await assessmentRepo.create(**payload.dict())
-        {"message":"Assessment fetched successfully","data": newAssesment}
+        newAssesment = await assessmentRepo.create(payload)
+        return {"message":"Assessment fetched successfully","data": newAssesment}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -45,9 +46,9 @@ async def fetch_assessments(current_user: Annotated[BaseUser, Depends(get_curren
 
 @router.get('/{assessment_id}', response_model=CustomResponse[BaseAssessment], tags=["Assessment"])
 async def fetch_assessment(assessment_id: Annotated[UUID, Path(title="")],):
-    assessment = await assessmentRepo.get(assessment_id=assessment_id)
+    assessment = await assessmentRepo.get_by_id(assessment_id=assessment_id)
 
-    return {"message":"Assessment fetched successfully","data": assessment}
+    return {"message":"Assessment fetched successfully", "data": assessment}
 
 @router.put('/{assessment_id}', response_model=CustomResponse[BaseAssessment], tags=["Assessment"])
 async def update_assessments(assessment_id: Annotated[UUID, Path(title="ID of assessment being fetched")],
@@ -65,7 +66,7 @@ async def delete_assessments(assessment_id: Annotated[UUID, Path(title="The ID o
 
 @router.post('/questions', response_model=CustomResponse[BaseAssessment], tags=["Question", "Assessment"])
 async def add_assessment_questions(payload: BaseQuestion):
-    assessment = await assessmentRepo.get(assessment_id=payload.assessment_id)
+    assessment = await assessmentRepo.get_by_id(assessment_id=payload.assessment_id)
 
     question = await questionRepo.create_with_answers(payload, payload.assessment_id)
     # get list of question object
