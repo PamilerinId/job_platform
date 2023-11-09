@@ -35,6 +35,7 @@ class Config(BaseSettings):
     AWS_S3_FOLDER_PHOTOS: str | None = os.environ.get("AWS_S3_FOLDER_PHOTOS")
     AWS_S3_FOLDER_CVS: str | None = os.environ.get("AWS_S3_FOLDER_CVS")
     AWS_S3_FOLDER_PROCTOR: str | None = os.environ.get("AWS_S3_FOLDER_PROCTOR")
+    AWS_S3_FOLDER_ASSESSMENT: str | None = os.environ.get("AWS_S3_FOLDER_ASSESSMENT")
     GOOGLE_CLIENT_ID: str | None = os.environ.get("GOOGLE_CLIENT_ID")
     GOOGLE_CLIENT_SECRET: str | None = os.environ.get("GOOGLE_CLIENT_SECRET")
     

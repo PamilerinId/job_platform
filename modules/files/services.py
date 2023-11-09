@@ -33,7 +33,6 @@ SUPPORTED_FILE_TYPES = {
     'image/png': 'png',
     'image/jpeg': 'jpg',
     'application/pdf': 'pdf',
-    'application/csv': 'csv',
     'video/mp4': 'mp4'
 }
 
@@ -101,10 +100,7 @@ async def create_upload_file(file: UploadFile, type: FileType,
     elif type == FileType.LOGO and current_user.role == UserType.CLIENT:
         company_query.update({Company.logo_url:uploaded_file_url}, synchronize_session=False)  
         
-    elif type == FileType.ASSESSMENT:
-        print("Seen it!")
-
-
+    
     db.commit()
     db.refresh(new_file)
 
