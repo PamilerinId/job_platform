@@ -111,7 +111,10 @@ async def fetch_assessment(assessment_id: Annotated[UUID, Path(title="")],):
 @router.put('/{assessment_id}', response_model=CustomResponse[BaseAssessment], tags=["Assessment"])
 async def update_assessments(assessment_id: Annotated[UUID, Path(title="ID of assessment being fetched")],
                              payload: BaseAssessment):
-    assessment = await assessmentRepo.update(payload)
+    
+    await assessmentRepo.update(payload)
+    
+    assessment = await assessmentRepo.get_by_id(assessment_id) 
 
     return {"message":"Assessment fetched successfully","data": assessment}
 
