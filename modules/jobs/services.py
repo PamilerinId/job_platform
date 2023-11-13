@@ -293,7 +293,7 @@ async def get_job_applications(job_id: Annotated[Optional[UUID], Path(title="The
         company = db.query(Company).filter(Company.owner_id == str(current_user.id)).first()
         if company is None:
             raise ForbiddenException("You dont seem to have a company profile, contact support")
-        application_query = application_query.filter(Application.job_id == job_id, Job.company_id == company.id)#, Application.status == ApplicationStatus.SHORTLISTED)
+        application_query = application_query.filter(Application.job_id == job_id, Job.company_id == company.id, Application.status == ApplicationStatus.SHORTLISTED)#, Application.status == ApplicationStatus.SHORTLISTED)
 
     total_count = application_query.count()
     applications = application_query.all()
