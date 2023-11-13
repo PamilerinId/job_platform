@@ -23,7 +23,7 @@ class AssessmentRepository:
             assessment = self.db.query(Assessment).filter(Assessment.id==payload.id).first()
             if assessment is None:
                 raise NotFoundException("No assessment not found!")
-        else:            
+        else:        
             assessment = self.create(payload=payload)
 
         return assessment
@@ -48,33 +48,35 @@ class AssessmentRepository:
         self.db.add(assessment)
         self.db.commit()
         self.db.refresh(assessment)
-        for question_item in payload.questions:
-            question =  Question(
-             title = question_item.title,
-             category = question_item.category,
-             assessment_id = assessment.id,
-             question_type = question_item.question_type,
-             difficulty = question_item.difficulty,
-             tags = question_item.tags,
-            )
-            self.db.add(question)
-            self.db.commit()
-            print(f"Question id is {question.id}")
-            for answer_item in question_item.answers:
-                answer = Answer(
-                    question_id = question.id,
-                    answer_text = answer_item.answer_text,
-                    boolean_text = answer_item.boolean_text,
-                    is_correct = answer_item.is_correct,
-                    feedback = answer_item.feedback
+        if payload.questions and len(payload.questions) > 0:
+            
+            for question_item in payload.questions:
+                question =  Question(
+                title = question_item.title,
+                category = question_item.category,
+                assessment_id = assessment.id,
+                question_type = question_item.question_type,
+                difficulty = question_item.difficulty,
+                tags = question_item.tags,
                 )
-                self.db.add(answer)
+                self.db.add(question)
+                self.db.commit()
+                for answer_item in question_item.answers:
+                    answer = Answer(
+                        question_id = question.id,
+                        answer_text = answer_item.answer_text,
+                        boolean_text = answer_item.boolean_text,
+                        is_correct = answer_item.is_correct,
+                        feedback = answer_item.feedback
+                    )
+                    self.db.add(answer)
+                self.db.commit()
+                self.db.refresh(answer)
+            
             self.db.commit()
-            self.db.refresh(answer)
-        
-        self.db.commit()
-        self.db.refresh(question)
-        self.db.refresh(assessment)
+            self.db.refresh(question)
+            self.db.refresh(assessment)
+            
         return assessment
 
     
@@ -155,13 +157,7 @@ class QuestionRepository:
         self.db: Session = get_db().__next__()
 
     async def create(self, payload: CreateQuestionSchema, assessment_id: str):
-        # question = Question(**payload.__dict__)
-        # question.assessment_id = assessment_id
-        # self.db.add(question)
-        # self.db.commit()
-        # self.db.refresh(question)
-        self.get(payload.id)
-        
+        await AssessmentRepository().get_by_id(assessment_id)
         question =  Question(
             title = payload.title,
             category = payload.category,

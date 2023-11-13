@@ -11,7 +11,7 @@ class BaseAnswer(BaseModel):
     answer_text: str
     boolean_text: Optional[bool] = None
     is_correct: Optional[bool] = False
-    feedback: str
+    feedback: Optional[str] = ""
 
 
 class BaseQuestion(BaseModel):
@@ -41,31 +41,31 @@ class BaseAssessment(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 class CreateAnswerSchema(BaseModel):
-    answer_text: Optional[str] = None
-    boolean_text: Optional[bool] = None
-    is_correct: Optional[bool] = None
-    feedback: str
+    answer_text: str
+    boolean_text: Optional[bool] = False
+    is_correct: Optional[bool] = False
+    feedback: Optional[str] = ""
 
 
 class CreateQuestionSchema(BaseModel):
     title: str
-    category: Optional[str] = None
-    question_type: QuestionType
-    difficulty: QuestionDifficulty
+    category: Optional[str] = ""
+    question_type: QuestionType 
+    difficulty: Optional[QuestionDifficulty] = QuestionDifficulty.MEDIUM 
     # options: Optional[List[str]] = None
     answers: Optional[List[CreateAnswerSchema]]  = []
-    tags: Optional[List[str]] = None
+    tags: Optional[List[str]] = []
     model_config = ConfigDict(from_attributes=True)
 
 
 class CreateAssessmentSchema(BaseModel):
     name: str
-    slug: Optional[str] = None
+    slug: Optional[str] = ""
     description: Optional[str] = None
     instructions: str
     difficulty: AssessmentDifficulty
-    tags: Optional[List[str]] = None
-    skills: Optional[List[str]] = None
+    tags: Optional[List[str]] = []
+    skills: Optional[List[str]] = []
     duration: str
     questions: Optional[List[CreateQuestionSchema]] = []
     model_config = ConfigDict(from_attributes=True)

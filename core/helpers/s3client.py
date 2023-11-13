@@ -43,6 +43,8 @@ async def upload_files(contents: bytes, key: str, type: FileType):
             folder = config.AWS_S3_FOLDER_CVS
         elif type == FileType.VIDEO:
             folder = config.AWS_S3_FOLDER_PROCTOR
+        elif type == FileType.ASSESSMENT:
+            folder = config.AWS_S3_FOLDER_ASSESSMENT
 
         file_name = folder + '/' + key
         s3Client.put_object(Bucket=config.AWS_S3_BUCKET, Key=file_name, Body=contents, ACL='public-read')
