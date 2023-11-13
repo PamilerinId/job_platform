@@ -268,7 +268,7 @@ class QuestionRepository:
         return questions
 
 
-    async def update(self, payload):
+    async def update(self, payload: BaseQuestion):
         question_query = self.db.query(Question).filter(Question.id==payload.id)
         question = question_query.first()
         if question is None:
