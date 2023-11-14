@@ -8,7 +8,10 @@ from fastapi import FastAPI, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-# import sentry_sdk
+import sentry_sdk
+from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
+from sentry_sdk.integrations.starlette import StarletteIntegration
+from sentry_sdk.integrations.fastapi import FastApiIntegration
 
 from core.router import router
 from core.env import config
@@ -75,6 +78,7 @@ def init_middleware(app_: FastAPI) -> None:
     # Middleware(SQLAlchemyMiddleware),
     app_.add_middleware(ResponseLogMiddleware)
     app_.middleware("http")(log_request_middleware)
+    app_.add_middleware(SentryAsgiMiddleware)
 
 def init_exception_handlers(app_: FastAPI) -> None:
     app_.add_exception_handler(RequestValidationError, request_validation_exception_handler)
@@ -83,13 +87,21 @@ def init_exception_handlers(app_: FastAPI) -> None:
 # def init_cache() -> None:
 #     Cache.init(backend=RedisBackend(), key_maker=CustomKeyMaker())
 
-# sentry_sdk.init(
-#     dsn=config.SENTRY_DSN,
-#     # Set traces_sample_rate to 1.0 to capture 100%
-#     # of transactions for performance monitoring.
-#     # We recommend adjusting this value in production,
-#     traces_sample_rate=1.0,
-# )
+
+# Sentry bug tracking
+sentry_sdk.init(
+    dsn=config.SENTRY_DSN,
+    traces_sample_rate= 0.5 if config.ENV == "production" else 1.0,
+    integrations=[StarletteIntegration(
+                        transaction_style="endpoint"
+                    ),
+                  FastApiIntegration(
+                        transaction_style="endpoint"
+                    ),
+                ],
+    enable_tracing=True,
+    environment=config.ENV,
+)
 
 def create_app() -> FastAPI:
     app_ = FastAPI(
