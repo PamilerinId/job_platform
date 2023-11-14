@@ -28,11 +28,11 @@ router = APIRouter(
 # ADMIN Routes
 @router.post('/', response_model=CustomResponse[BaseUser], tags=["User"])
 async def create_user(payload: CreateUser,
-    # current_user: Annotated[BaseUser, Depends(get_current_user)],
+    current_user: Annotated[BaseUser, Depends(get_current_user)],
                   db: Session = Depends(get_db)):
     
-    # if current_user.role != UserType.ADMIN:
-    #     raise UnauthorisedUserException("User is not authorised to access this view")
+    if current_user.role != UserType.ADMIN:
+        raise UnauthorisedUserException("User is not authorised to access this view")
     
     user = db.query(User).filter(User.email == payload.email.lower()).first()
     if user:
