@@ -58,8 +58,6 @@ async def update_assessment_by_csv(file: UploadFile, assessment_id: Annotated[UU
                                 db: Session = Depends(get_db)
                             ):
     
-    payload = await assessmentRepo.get_by_id(assessment_id)
-    
     if not file:
         raise NotFoundException('No upload file sent')
     
@@ -85,8 +83,9 @@ async def update_assessment_by_csv(file: UploadFile, assessment_id: Annotated[UU
     # db.commit()
     
     # db.refresh(new_file)
-    await generate_questions(uploaded_file_url, payload)
+    await generate_questions(uploaded_file_url, assessment_id)
     
+    payload = await assessmentRepo.get_by_id(assessment_id)
     
     return {"message":"Assessment fetched successfully", "data": payload}
     
@@ -112,7 +111,10 @@ async def fetch_assessment(assessment_id: Annotated[UUID, Path(title="")],):
 @router.put('/{assessment_id}', response_model=CustomResponse[BaseAssessment], tags=["Assessment"])
 async def update_assessments(assessment_id: Annotated[UUID, Path(title="ID of assessment being fetched")],
                              payload: BaseAssessment):
-    assessment = await assessmentRepo.update(payload)
+    
+    await assessmentRepo.update(payload)
+    
+    assessment = await assessmentRepo.get_by_id(assessment_id) 
 
     return {"message":"Assessment fetched successfully","data": assessment}
 
