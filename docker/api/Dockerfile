@@ -1,5 +1,6 @@
 FROM python:3.11-slim-bookworm
 
+ENV PYTHONUNBUFFERED 1
 
 RUN apt-get -y update && apt-get -y install libmagic1
 
