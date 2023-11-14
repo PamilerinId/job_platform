@@ -52,10 +52,10 @@ async def create_assessments(payload: CreateAssessmentSchema):
         raise HTTPException(status_code=500, detail=str(e))
     
     
-@router.put("/upload_csv/{assessment_id}", response_model=CustomResponse[BaseAssessment], tags=["Files"])
-async def update_assessment_by_csv(file: UploadFile, assessment_id: Annotated[UUID, Path(title="")],
-                                current_user: Annotated[User, Depends(get_current_user)],
-                                db: Session = Depends(get_db)
+@router.put("/upload-csv/{assessment_id}", response_model=CustomResponse[BaseAssessment], tags=["Files"])
+async def update_assessment_by_csv(file: UploadFile, assessment_id: Annotated[UUID, Path(title="")]
+                                # current_user: Annotated[User, Depends(get_current_user)],
+                                # db: Session = Depends(get_db)
                             ):
     
     if not file:
