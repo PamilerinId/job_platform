@@ -84,8 +84,7 @@ class AssessmentRepository:
 
     
     async def get_by_id(self, assessment_id: str):
-        assessment = self.db.query(Assessment).options(joinedload(Assessment.questions)
-                                                       .joinedload(Question.answers)).filter(Assessment.id==assessment_id).first()
+        assessment = self.db.query(Assessment).options(joinedload(Assessment.questions).joinedload(Question.answers)).filter(Assessment.id==assessment_id).first()
         if assessment is None:
             raise NotFoundException("Assessment not found!")
         
@@ -160,8 +159,7 @@ class QuestionRepository:
     def __init__(self) -> None:
         self.db: Session = get_db().__next__()
 
-    async def create(self, payload: CreateQuestionSchema, assessment_id: str):
-        await AssessmentRepository().get_by_id(assessment_id)
+    async def create(self, payload: CreateQuestionSchema, assessment_id: UUID):
         question =  Question(
             title = payload.title,
             category = payload.category,
@@ -191,7 +189,7 @@ class QuestionRepository:
 
         return question
     
-    async def create_with_answers(self, payload: BaseQuestion, assessment_id: str):        
+    async def create_with_answers(self, payload: BaseQuestion, assessment_id: UUID):        
         new_question =  Question(
             title = payload.title,
             category = payload.category,
@@ -422,22 +420,31 @@ class UserResultRepository:
         return userResults
     
 
-    async def get_by_user_id(self,  page: int, limit: int, user_id: UUID):
+    async def get_by_user_id(self, page: int, limit: int, user_id: UUID):
         skip = (page - 1) * limit 
 
-        userResults = self.db.query(UserResult).filter(UserResult.user_id == user_id
+        user_results = self.db.query(UserResult).filter(UserResult.user_id == user_id
             ).order_by(UserResult.created_at.desc()
                        ).limit(limit).offset(skip).all()
-        return userResults
+        
+        return user_results
     
 
-    async def get_by_assessment_id(self,  page: int, limit: int, assessment_id: UUID):
+    async def get_by_assessment_id(self, page: int, limit: int, assessment_id: UUID):
+        
         skip = (page - 1) * limit
 
-        userResults = self.db.query(UserResult).filter(UserResult.assessment_id == assessment_id
+        results = self.db.query(UserResult).filter(UserResult.assessment_id == assessment_id
             ).order_by(UserResult.created_at.desc()
                        ).limit(limit).offset(skip).all()
-        return userResults
+        
+        return results
+    
+    async def get_by_result_id(self, result_id: UUID):
+
+        result = self.db.query(UserResult).filter(UserResult.id == result_id).first()
+        
+        return result
 
 
     async def update(self, payload):
