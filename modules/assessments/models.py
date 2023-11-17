@@ -30,6 +30,7 @@ class QuestionType(str, enum.Enum):
     TRUE_FALSE= "True_False"
 
 class Status(str, enum.Enum):
+    # DISTINCTION = "Distinction"
     PASS = "Pass"
     FAIL="Fail"
     
@@ -130,7 +131,7 @@ class UserResult(Base):
     assessment_id = Column(UUID(), ForeignKey('assessments.id'), index=True,)
     score = Column(Integer, nullable=True)
     status = Column(Enum(Status))
-    cooldown = Column(TIMESTAMP(timezone=True), nullable=False)
+    cooldown = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text("now()"))
 
     # Audit logs
     created_at = Column(TIMESTAMP(timezone=True),
