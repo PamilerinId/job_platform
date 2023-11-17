@@ -14,7 +14,7 @@ from modules.users.schemas import BaseUser
 
 from modules.files.models import FileType, File
 from .models import Assessment, Question, Answer, UserResult, AssessmentDifficulty
-from .schemas import BaseAssessment, BaseQuestion, BaseAnswer, BaseUserResults, CreateAssessmentSchema, CreateQuestionSchema, CreateAnswerSchema
+from .schemas import BaseAssessment, BaseQuestion, CreateQuestionSchema, BaseUserResults, CreateAssessmentSchema, CreateAssessmentResults
 from .repository import AssessmentRepository, QuestionRepository, UserResultRepository
 
 from sqlalchemy import or_
@@ -42,7 +42,8 @@ SUPPORTED_FILE_TYPES = {
 # CRUD assessments - exposed only; questions and answer not exposed
 # fetch and update delete results
 @router.post('/', response_model=CustomResponse[BaseAssessment], tags=["Assessment"])
-async def create_assessments(payload: CreateAssessmentSchema):
+async def create_assessments(payload: CreateAssessmentSchema,
+                             current_user: Annotated[User, Depends(get_current_user)]):
     """Create a new assessment""" 
     
     try:
@@ -125,19 +126,27 @@ async def delete_assessments(assessment_id: Annotated[UUID, Path(title="The ID o
     assessment = await assessmentRepo.delete(assessment_id)
     return assessment
 
-@router.post('/questions', response_model=CustomResponse[BaseAssessment], tags=["Question", "Assessment"])
-async def add_assessment_questions(payload: BaseQuestion):
+@router.get('/questions/{question_id}', response_model=CustomResponse[BaseQuestion], tags=["Question", "Assessment"])
+async def get_assessment_question(question_id: Annotated[UUID, Path(title="The ID of the assessment to be deleted")],
+                                   current_user: Annotated[BaseUser, Depends(get_current_user)]):
+    
+    assessment = await questionRepo.get(question_id=question_id)
+
+    return {"message":"Question fetched successfully","data": assessment}
+
+@router.post('/questions', response_model=CustomResponse[BaseQuestion], tags=["Question", "Assessment"])
+async def add_assessment_questions(payload: CreateQuestionSchema):
     assessment = await assessmentRepo.get_by_id(assessment_id=payload.assessment_id)
 
-    question = await questionRepo.create_with_answers(payload, payload.assessment_id)
+    await questionRepo.create_with_answers(payload, payload.assessment_id)
     # get list of question object
     # call create question on each object
-    # creates question with details and options??
+    # creates question with details and options?s?
     # runs through options and creates answer with answer as correct bool where answer objects
 
-    return {"message":"Assessment fetched successfully","data": assessment}
+    return {"message":"Question added successfully","data": assessment}
 
-@router.delete('/questions/{question_id}', response_model=CustomResponse, tags=["Question", "Assessment"])
+@router.delete('/questions/{question_id}', response_model=CustomResponse, tags=["Questions", "Assessment"])
 async def delete_assessment_questions(question_id: Annotated[UUID, Path(title="The ID of the question to be deleted")],
                current_user: Annotated[BaseUser, Depends(get_current_user)]):
 
@@ -146,19 +155,39 @@ async def delete_assessment_questions(question_id: Annotated[UUID, Path(title="T
     return question
 
 
-@router.get('/results/{assessment_id}', response_model=CustomListResponse[BaseUserResults], tags=["Assessment"])
+@router.post('/results', response_model=CustomListResponse[BaseUserResults], tags=["Assessment", "Results"])
+async def create_assessment_results(payload: CreateAssessmentResults, 
+                                    current_user: Annotated[BaseUser, Depends(get_current_user)]):
+    
+    assessment: BaseAssessment = await assessmentRepo.get_by_id(payload.assessment_id)
+    
+    results = await resultRepo.create(payload)
+    results = results.__dict__
+    results.update({
+        "assessment_name": assessment.name,
+        "description": assessment.description,
+        "difficulty": assessment.difficulty,
+        "duration": assessment.duration,  
+    })
+
+    return {'message': 'Results created successfully', 'data': [results]}
+
+@router.get('/results/{user_id}', response_model=CustomListResponse[BaseUserResults], tags=["Assessment", "Results"])
+async def fetch_user_results(user_id: Annotated[UUID, Path(title="ID of user")],
+                             limit: int = 10, page: int = 1, search: str = ''):
+    
+    results = await resultRepo.get_by_user_id(page=page, limit=limit, user_id=user_id)
+
+    return {'message': 'Assessments retrieved successfully', 'count': len(results), 'data': results}
+
+@router.get('/results/{assessment_id}', response_model=CustomListResponse[BaseUserResults], tags=["Assessment", "Results"])
 async def fetch_assessment_results(assessment_id: Annotated[UUID, Path(title="ID of assessment being fetched")], 
                                     limit: int = 10, page: int = 1, search: str = ''):
     results = await resultRepo.get_by_assessment_id(page=page, limit=limit, assessment_id=assessment_id)
 
     return {'message': 'Assessments retrieved successfully', 'count': len(results), 'data': results}
 
-@router.get('/results/{user_id}', response_model=CustomListResponse[BaseUserResults], tags=["Assessment"])
-async def fetch_user_results(user_id: Annotated[UUID, Path(title="ID of assessment being fetched")],
-                             limit: int = 10, page: int = 1, search: str = ''):
-    results = await resultRepo.get_by_assessment_id(page=page, limit=limit, user_id=user_id)
 
-    return {'message': 'Assessments retrieved successfully', 'count': len(results), 'data': results}
 
 # @router.get('/results/{user_id}/{assessment_id}', response_model=CustomResponse[BaseUserResults], tags=["Assessment"])
 # async def fetch_user_assessment_result():

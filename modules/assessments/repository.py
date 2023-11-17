@@ -1,11 +1,14 @@
 from sqlalchemy.orm import Session, joinedload
 from typing import List
+from datetime import datetime
+import json
 
 
 from fastapi import Depends
 
 from core.exceptions.base import BadRequestException, NotFoundException
 from core.dependencies.sessions import get_db
+from core.helpers.score_utils import mark_questions 
 
 from .models import Assessment, Question, Answer, UserResult, AssessmentDifficulty, QuestionDifficulty, QuestionType
 from .schemas import *
@@ -180,8 +183,8 @@ class QuestionRepository:
                     feedback = answer_item.feedback
                 )
                 self.db.add(answer)
-            self.db.commit()
-            self.db.refresh(answer)
+                self.db.commit()
+                self.db.refresh(answer)
         
         self.db.commit()
         self.db.refresh(question)
@@ -208,8 +211,8 @@ class QuestionRepository:
                 feedback = answer_item.feedback
             )
             self.db.add(answer)
-        self.db.commit()
-        self.db.refresh(answer)
+            self.db.commit()
+            self.db.refresh(answer)
         
         self.db.commit()
         self.db.refresh(new_question)
@@ -217,7 +220,7 @@ class QuestionRepository:
         return new_question 
 
 
-    async def get(self, question_id: str):
+    async def get(self, question_id: UUID):
         question = self.db.query(Question).filter(Question.id==question_id).first()
         if question is None:
             raise NotFoundException("Question not found!")
@@ -380,14 +383,25 @@ class UserResultRepository:
     def __init__(self) -> None:
         self.db: Session = get_db().__next__()
 
-    async def create(self, payload):
-        userResult = UserResult(**payload.__dict__)
-
+    async def create(self, payload: CreateAssessmentResults):
+        assessment_review = mark_questions(payload)
+        new_result = {
+            "user_id" : payload.user_id,
+            "assessment_id" : payload.assessment_id,
+            "score": assessment_review.total_score,
+            "status": assessment_review.status,
+            "results": json.dumps(assessment_review.dict()),
+            "cooldown": datetime.now()
+        }
+        
+        userResult = UserResult(**new_result)
+        
         self.db.add(userResult)
         self.db.commit()
+        result = userResult
         self.db.refresh(userResult)
 
-        return userResult
+        return result
 
     async def get(self, result_id: str):
         userResult = self.db.query(UserResult).filter(UserResult.id==result_id).first()
@@ -408,8 +422,8 @@ class UserResultRepository:
         return userResults
     
 
-    async def get_by_user_id(self,  page: int, limit: int, user_id: str):
-        skip = (page - 1) * limit
+    async def get_by_user_id(self,  page: int, limit: int, user_id: UUID):
+        skip = (page - 1) * limit 
 
         userResults = self.db.query(UserResult).filter(UserResult.user_id == user_id
             ).order_by(UserResult.created_at.desc()
@@ -417,7 +431,7 @@ class UserResultRepository:
         return userResults
     
 
-    async def get_by_assessment_id(self,  page: int, limit: int, assessment_id: str):
+    async def get_by_assessment_id(self,  page: int, limit: int, assessment_id: UUID):
         skip = (page - 1) * limit
 
         userResults = self.db.query(UserResult).filter(UserResult.assessment_id == assessment_id
