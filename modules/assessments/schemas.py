@@ -53,7 +53,7 @@ class CreateQuestionSchema(BaseModel):
     question_type: QuestionType 
     difficulty: Optional[QuestionDifficulty] = QuestionDifficulty.MEDIUM 
     # options: Optional[List[str]] = None
-    answers: Optional[List[CreateAnswerSchema]]  = []
+    answers: Optional[List[CreateAnswerSchema]] = []
     tags: Optional[List[str]] = []
     model_config = ConfigDict(from_attributes=True)
 
@@ -71,12 +71,38 @@ class CreateAssessmentSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class ScoreDetails(BaseModel):
+    total_questions: Optional[int] = 0
+    total_score: Optional[int] = 0
+    percentage: Optional[int] = 0
+    status: Optional[Status] = Status.FAIL 
 
+
+class CreateQuestionResults(BaseModel):
+    question_id: UUID
+    answer: BaseAnswer
+    model_config = ConfigDict(from_attributes=True)
+    
+    
+    
+class CreateAssessmentResults(BaseModel):
+    assessment_id: UUID
+    user_id: Optional[UUID] = None
+    submission: List[CreateQuestionResults]
+    model_config = ConfigDict(from_attributes=True)
+    
+    
+    
 class BaseUserResults(BaseModel):
     id: Optional[UUID] = None
     user_id: Optional[UUID] = None
     assessment_id: Optional[UUID] = None
+    assessment_name: str
+    description: Optional[str] = None
+    difficulty: AssessmentDifficulty
+    duration: str
     score: Optional[int] = None
     status: Optional[Status] = None
-    result: Optional[Json[Any]] = None
+    results: Optional[Json[Any]] = None
     cooldown: Optional[datetime] = None 
+    model_config = ConfigDict(from_attributes=True)
