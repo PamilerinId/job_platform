@@ -31,7 +31,7 @@ from core.db import Transactional, session
 
 @Transactional()
 async def create_user(self):
-    session.add(User(email="padocon@naver.com"))
+    session.add(User(email="pam@super.com"))
 ```
 
 Do not use explicit `commit()`. `Transactional` class automatically do.
@@ -225,6 +225,6 @@ await Cache.remove_by_tag(tag=CacheTag.GET_USER_LIST)
 pytest tests/{file}.py -v -s
 
 ### TODO:
-- Make db a global dependency rather than per route
+- Make db a global dependency rather than per route: DONE
 - Refactor get current user and auth middleware
-- Implement repository pattern
+- Implement repository pattern: IN PROGRESS
