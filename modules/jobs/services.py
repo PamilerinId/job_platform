@@ -381,7 +381,6 @@ async def delete_application(application_id: Annotated[UUID, Path(title="The ID 
 
 
 #Job Assessments
-
 @router.get('/{job_id}/assessments', response_model=CustomListResponse[BaseJobAssessment],  tags=["Job Assessments", "Jobs"])
 async def fetch_job_assessments(job_id: Annotated[UUID, Path(title="The ID of the job to be fetched")],
                             current_user: Annotated[BaseUser, Depends(get_current_user)],
@@ -397,25 +396,6 @@ async def fetch_job_assessments(job_id: Annotated[UUID, Path(title="The ID of th
     jobAssessments = await jobAssessmentRepo.get_by_job(page=page, limit=limit, filter=search, job_id=job_id)
 
     return {'message': 'Assessments retrieved successfully', 'count': len(jobAssessments), 'data': jobAssessments}
-
-
-# @router.get('/job-assessments/{job_assessment_id}', response_model=CustomResponse[BaseJobAssessment], tags=["Job Assessments", "Assessments"])
-# async def fetch_job_assessment(job_assessment_id: Annotated[UUID, Path(title="The ID of the job assessment to be deleted")],
-#                                 current_user: Annotated[BaseUser, Depends(get_current_user)]):
-    
-#     jobAssessment = await jobAssessmentRepo.get_by_id(job_assessment_id=job_assessment_id)
-    
-#     return {'message': 'Job assessment retrieved successfully', 'data': jobAssessment}
-
-
-# @router.get('/{job_id}/job-assessments', response_model=CustomResponse[BaseJobAssessment], tags=["Job Assessments", "Assessments"])
-# async def list_job_assessments(job_id: Annotated[UUID, Path(title="The ID of the job")],
-#                             current_user: Annotated[BaseUser, Depends(get_current_user)],
-#                             limit: int = 10, page: int = 1, search: str = ''):
-    
-#     jobAssessments = await jobAssessmentRepo.get_by_job(page=page, limit=limit, filter=search, job_id=job_id)
-    
-#     return {'message': 'Job assessments retrieved successfully', "count": len(jobAssessments), 'data': jobAssessments}
 
 
 @router.post('/{job_id}/assessments', response_model=CustomResponse[BaseJobAssessment], tags=["Job Assessments", "Jobs"])
