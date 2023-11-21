@@ -92,7 +92,6 @@ class AssessmentRepository:
 
     
     async def get_list(self,  page: int, limit: int, filter: str):
-        self.db.rollback()
         skip = (page - 1) * limit
 
         assessments = self.db.query(Assessment
@@ -101,6 +100,7 @@ class AssessmentRepository:
         
         if len(assessments) < 1:
             raise NotFoundException("Assessments not found!")  
+        
         return assessments
     
 
@@ -109,6 +109,7 @@ class AssessmentRepository:
         assessments = self.db.query(Assessment).filter(Assessment.difficulty == difficulty
             ).order_by(Assessment.created_at.desc()
                        ).limit(limit).offset(skip).all()
+            
         return assessments
 
     
@@ -153,8 +154,7 @@ class AssessmentRepository:
             self.db.rollback()
             raise BadRequestException("Assessment delete failed")
 
-
-
+        
 class QuestionRepository:
     def __init__(self) -> None:
         self.db: Session = get_db().__next__()
@@ -226,7 +226,7 @@ class QuestionRepository:
         return question
 
 
-    async def get_list(self,  page: int, limit: int, filter):
+    async def get_list(self,  page: int, limit: int, filter: str):
         skip = (page - 1) * limit
 
         questions = self.db.query(Question

@@ -114,14 +114,6 @@ class Answer(Base):
         return f"{self.id}"
     
 
-class JobAssessment(Base):
-    __tablename__ = 'job_assessments'
-    id = Column(UUID(as_uuid=True), primary_key=True, nullable=False,
-                default=uuid.uuid4)
-    assessment_id = Column(UUID(), ForeignKey('assessments.id'), index=True,)
-    job_id =  Column(UUID(), ForeignKey('jobs.id'), index=True,)
-
-
 class UserResult(Base):
     __tablename__ = 'user_assessments'
     id = Column(UUID(as_uuid=True), primary_key=True, nullable=False,

@@ -73,3 +73,16 @@ class Application(Base):
                         nullable=False, server_default=text("now()"))
     updated_at = Column(TIMESTAMP(timezone=True),
                         nullable=False, server_default=text("now()"), onupdate=text("now()"))
+    
+
+
+class JobAssessment(Base):
+    __tablename__ = 'job_assessments'
+    id = Column(UUID(as_uuid=True), primary_key=True, nullable=False,
+                default=uuid.uuid4)
+    assessment_id = Column(UUID(), ForeignKey('assessments.id'), index=True,)
+    job_id =  Column(UUID(), ForeignKey('jobs.id'), index=True,)
+
+    def __repr__(self):
+        return f"<Job assessment {self.id}>"
+    
