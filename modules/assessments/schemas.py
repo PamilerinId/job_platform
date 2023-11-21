@@ -40,6 +40,8 @@ class BaseAssessment(BaseModel):
     questions: Optional[List[BaseQuestion]] = None
     model_config = ConfigDict(from_attributes=True)
 
+    
+
 class CreateAnswerSchema(BaseModel):
     answer_text: str
     boolean_text: Optional[bool] = False
@@ -69,6 +71,7 @@ class CreateAssessmentSchema(BaseModel):
     duration: str
     questions: Optional[List[CreateQuestionSchema]] = []
     model_config = ConfigDict(from_attributes=True)
+
 
 
 class ScoreDetails(BaseModel):

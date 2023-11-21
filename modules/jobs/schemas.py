@@ -5,6 +5,7 @@ from pydantic import ConfigDict, BaseModel, Field, constr
 
 
 from modules.jobs.enums import *
+from modules.assessments.schemas import BaseAssessment
 from modules.users.schemas import BaseCompany, BaseCandidate, BaseUser
 
 class BaseJob(BaseModel):
@@ -80,3 +81,17 @@ class UpdateApplication(BaseModel):
     applicant_id: Optional[UUID] = None
     comment: Optional[str] = None
     model_config = ConfigDict(from_attributes=True, validate_assignment=True)
+    
+
+
+class BaseJobAssessment(BaseModel):
+    id: UUID
+    job_id: UUID
+    assessment_id: UUID
+    model_config = ConfigDict(from_attributes=True)
+    
+
+class CreateJobAssessment(BaseModel):
+    job_id: UUID 
+    assessment_id: UUID
+    model_config = ConfigDict(from_attributes=True)
