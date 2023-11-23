@@ -3,24 +3,22 @@ from typing import Annotated, Union
 from uuid import UUID, uuid4
 from fastapi import Depends, HTTPException, status, APIRouter, Response, Path, UploadFile, Form
 
-from core.exceptions import NotFoundException, BadRequestException
+from core.exceptions import NotFoundException, BadRequestException, UnauthorisedUserException
 from core.dependencies.sessions import get_db
 from core.dependencies.auth import get_current_user
 from core.helpers.schemas import CustomResponse, CustomListResponse
 from core.helpers.s3client import upload_files
-from core.helpers.text_utils import to_slug
 from core.helpers.csv_utils import generate_questions
 from modules.users.schemas import BaseUser
 
-from modules.files.models import FileType, File
-from .models import Assessment, Question, Answer, UserResult, AssessmentDifficulty
+from modules.files.models import FileType
 from .schemas import BaseAssessment, BaseQuestion, CreateQuestionSchema, BaseUserResults, CreateAssessmentSchema, CreateAssessmentResults
 from .repository import AssessmentRepository, QuestionRepository, UserResultRepository
 
 from sqlalchemy import or_
 from sqlalchemy.orm import Session, joinedload
 
-from modules.users.models import User
+from modules.users.models import User, UserType
 import magic
 
 router = APIRouter(
@@ -45,6 +43,9 @@ SUPPORTED_FILE_TYPES = {
 async def create_assessments(payload: CreateAssessmentSchema,
                              current_user: Annotated[User, Depends(get_current_user)]):
     """Create a new assessment""" 
+    
+    if current_user.role == UserType.CANDIDATE:
+        raise UnauthorisedUserException("User is not authorised to access this view")
     
     try:
         new_assessment = await assessmentRepo.create(payload)
@@ -104,8 +105,11 @@ async def fetch_assessments(current_user: Annotated[BaseUser, Depends(get_curren
 
 
 @router.get('/{assessment_id}', response_model=CustomResponse[BaseAssessment], tags=["Assessments"])
-async def fetch_assessment(assessment_id: Annotated[UUID, Path(title="")],):
-    assessment = await assessmentRepo.get_by_id(assessment_id=assessment_id)
+async def fetch_assessment(assessment_id: Annotated[UUID, Path(title="")], 
+                           current_user: Annotated[BaseUser, Depends(get_current_user)],
+                           question_limit: int = 10,):
+    
+    assessment: BaseAssessment = await assessmentRepo.get_by_id(assessment_id=assessment_id)
 
     return {"message":"Assessment fetched successfully", "data": assessment}
 
@@ -134,15 +138,29 @@ async def delete_assessments(assessment_id: Annotated[UUID, Path(title="The ID o
 
 
 
-
-
-
-
     
 #Assessment questions
 
+@router.get('/{assessment_id}/questions', response_model=CustomListResponse[BaseQuestion], tags=["Questions", "Assessments"])
+async def fetch_assessment_questions(assessment_id: Annotated[UUID, Path(title="The ID of the assessment to be fetched")],
+                                current_user: Annotated[BaseUser, Depends(get_current_user)],
+                                limit: int = 10, page: int = 1, search: str = ''):
+    
+    await assessmentRepo.get_by_id(assessment_id=assessment_id)
+    
+    if current_user.role == UserType.CANDIDATE:
+        question = await questionRepo.get_random_list(page=page, limit=limit, filter=search, assessment_id=assessment_id)
+    
+    else:
+        question = await questionRepo.get_list(page=page, limit=limit, filter=search, assessment_id=assessment_id)
+        
+    
+    return {"message":"Question added successfully", "data": question}
+
+
 @router.post('/{assessment_id}/questions', response_model=CustomResponse[BaseQuestion], tags=["Questions", "Assessments"])
 async def create_assessment_questions(assessment_id: Annotated[UUID, Path(title="The ID of the assessment to be fetched")],
+                            current_user: Annotated[BaseUser, Depends(get_current_user)],
                             payload: CreateQuestionSchema):
     
     await assessmentRepo.get_by_id(assessment_id=assessment_id)

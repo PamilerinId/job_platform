@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.sql import func
 from typing import List
 from datetime import datetime
 import json
@@ -226,12 +227,25 @@ class QuestionRepository:
         return question
 
 
-    async def get_list(self,  page: int, limit: int, filter: str):
+    async def get_random_list(self,  page: int, limit: int, filter: str, assessment_id: UUID):
+        skip = (page - 1) * limit
+
+        questions = self.db.query(Question
+                                ).order_by(func.random()
+                                ).filter(Question.assessment_id == assessment_id).limit(limit
+                                ).offset(skip).all()
+
+        if len(questions) is None:
+            raise NotFoundException("Question not found!")  
+        return questions
+    
+    
+    async def get_list(self,  page: int, limit: int, filter: str, assessment_id: UUID):
         skip = (page - 1) * limit
 
         questions = self.db.query(Question
                                     ).order_by(Question.created_at.desc()
-                                                         ).limit(limit).offset(skip).all()
+                                                        ).limit(limit).offset(skip).all()
 
         if len(questions) is None:
             raise NotFoundException("Question not found!")  
