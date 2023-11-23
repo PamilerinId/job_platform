@@ -1,6 +1,10 @@
 import math
+import random
+from typing import List
 from modules.assessments.schemas import CreateAssessmentResults, ScoreDetails
 from modules.assessments.models import Status
+from modules.assessments.schemas import BaseQuestion
+from core.exceptions import BadRequestException
 
 
 def mark_questions(paylod: CreateAssessmentResults):
