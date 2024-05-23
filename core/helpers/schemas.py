@@ -31,7 +31,7 @@ class EmailParameters(BaseModel, Generic[DataT]):
 class WelcomeEmail(BaseModel):
     first_name: str
     last_name: Optional[str] = None
-    action_url: Optional[str] = "https://distinct.ai"
+    action_url: Optional[str] = "https://job_board.ai"
 
 class CandidateWelcomeEmail(WelcomeEmail):
     pass

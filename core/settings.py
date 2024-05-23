@@ -63,9 +63,7 @@ def init_middleware(app_: FastAPI) -> None:
     app_.add_middleware(
         CORSMiddleware,
         allow_origins=['http://localhost:3000/',
-                        'http://localhost:8000/',
-                        'http://staging-v2.distinct.ai/',
-                        'https://staging-v2.distinct.ai/', '*'],
+                        'http://localhost:8000/', '*'],
         allow_credentials=True,
         allow_methods=['*'],
         allow_headers=['*'],
@@ -105,7 +103,7 @@ sentry_sdk.init(
 
 def create_app() -> FastAPI:
     app_ = FastAPI(
-        title="DistinctAI v2 API",
+        title="Job Board v1 API",
         description="",
         version="2.0.0",
         docs_url=None if config.ENV == "production" else "/docs",

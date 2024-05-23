@@ -235,8 +235,8 @@ async def admin_login_via_google(request: Request,token:str,
             "email" : user['email'] 
         })
 
-        # check if user is distinct email
-        if user['email'].split('@')[1] != 'distinct.ai': #config.domain_name
+        # check if user is email
+        if user['email'].split('@')[1] != 'job_board.ai': #config.domain_name
             raise UnauthorisedUserException('You are not authorised to access the page')
 
         # Check if the user exist

@@ -4,7 +4,7 @@ from postmark.core import PMMail, PMMailSendException
 
 from core.env import config
 
-SENDER_MAIL = "hello@distinct.ai"
+SENDER_MAIL = "hello@job_board.ai"
 API_KEY = config.POSTMARK_API_KEY
 
 # class MailTemplate(Enum.enum): 

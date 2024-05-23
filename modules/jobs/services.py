@@ -62,7 +62,7 @@ async def fetch_jobs(current_user: Annotated[BaseUser, Depends(get_current_user)
             return {'message': 'You have created no Jobs'}
             # raise NotFoundException('You have created no Jobs')
     # if no user; no jobs
-    # if thirdparty; filter tier [distinct user]
+    # if thirdparty; filter tier [platform user]
     jobs = jobs_query.order_by(Job.created_at.desc()).limit(limit).offset(skip).all()
     total_count = jobs_query.count()
     if len(jobs) < 1: 

@@ -39,7 +39,7 @@ class Config(BaseSettings):
     GOOGLE_CLIENT_ID: str | None = os.environ.get("GOOGLE_CLIENT_ID")
     GOOGLE_CLIENT_SECRET: str | None = os.environ.get("GOOGLE_CLIENT_SECRET")
     
-    CLIENT_CANDIDATE_BASE_URL: str = 'https://dashboard.distinct.ai'
+    CLIENT_CANDIDATE_BASE_URL: str = 'https://dashboard.job_board.ai'
     AUTH: str = '/auth'
     CHANGE_PASSWORD: str = '/change-password'
     
